@@ -50,6 +50,34 @@ the `ActionResult<T>` server-action convention lifted from RHS.
    capability gate — otherwise any authenticated user could pass an arbitrary
    `org_id` (the F-SEC-04 hole).
 
+## Authorization & multi-tenancy (B2 — the F-SEC-04 fix)
+Authorization is enforced in **two places, both reading `org_members`**:
+1. **DB (authoritative).** Tenant-scoped RLS on every table: authenticated users
+   may `SELECT` only rows of an org they belong to (`is_org_member(org_id)`), and
+   have **no direct write policy** (default-deny) — so writes can ONLY happen
+   through a `SECURITY DEFINER` RPC. The RPC **self-authorizes on `auth.uid()`**:
+   an authenticated caller must be a member of the target `org_id` with the
+   required capability, so a member of org A can never act on org B even via a
+   direct/forged RPC call.
+2. **App gate (ergonomic).** `lib/auth/authorize.ts` + the wrapper resolve the
+   caller's org + capabilities **from their session** (never client input) and
+   reject early with typed errors.
+
+**Two write paths:**
+- **Authenticated writes** call the RPC via the **user-session client**
+  (`lib/supabase/server.ts`) so `auth.uid()` is set and the RPC's self-check runs.
+  `org_id` is the session-resolved `ctx.orgId`, never a client field.
+- **System / automation writes** (cron, webhooks — B3/B4) use the **admin
+  client** (`service_role`, `auth.uid()` null = trusted) and pass `org_id`
+  explicitly.
+
+**Rules:** every new table gets RLS-default-deny + an `org_id`-scoped SELECT
+policy (RLS-on-without-policy silently blocks everything — never ship that). No
+god-role: even `owner` is property-scoped; a cross-tenant view is a separate,
+audited capability, never the default. Capabilities (OP MODEL §3/§12):
+`booking.confirm` & date-block = Owner/PM; `record.delete` = Owner; `pnl.view_margin`
+& `discount.approve` = Owner/PM.
+
 ## Reference implementation (copy this shape)
 - RPC: `supabase/migrations/20260531090000_b1_atomic_booking.sql` →
   `confirm_booking(...)`.

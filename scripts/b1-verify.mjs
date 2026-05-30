@@ -36,7 +36,9 @@ const count = async (table, extra = (q) => q) =>
   (await extra(db.from(table).select('*', { count: 'exact', head: true }).eq('org_id', ORG))).count;
 
 async function main() {
-  // setup: one hall under the test org
+  // setup: a tenant org (B2 added the FK org_id→orgs) + one hall under it
+  const o = await db.from('orgs').insert({ id: ORG, name: 'B1 Test Org' }).select('id');
+  if (o.error) { console.error('SETUP FAILED (is the B2 migration applied?):', o.error.message); process.exit(2); }
   const h = await db.from('halls').insert({ org_id: ORG, name: 'Test Hall' }).select('id').single();
   if (h.error) { console.error('SETUP FAILED (is the B1 migration applied?):', h.error.message); process.exit(2); }
   const hallId = h.data.id;
@@ -101,9 +103,9 @@ try {
   console.error('  XX harness threw:', e.message);
   fails++;
 } finally {
-  // self-clean: bookings cascade to date_blocks + deposit_ledger; then halls + audit
-  await db.from('bookings').delete().eq('org_id', ORG);
-  await db.from('halls').delete().eq('org_id', ORG);
+  // self-clean: deleting the org cascades to halls/bookings/date_blocks/deposits
+  // (FK on delete cascade); audit_log has no FK, so clear it by org_id.
+  await db.from('orgs').delete().eq('id', ORG);
   await db.from('audit_log').delete().eq('org_id', ORG);
   const leftover =
     (await count('bookings')) + (await count('halls')) + (await count('date_blocks')) + (await count('audit_log'));

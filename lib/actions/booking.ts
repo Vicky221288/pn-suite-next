@@ -1,21 +1,23 @@
 'use server';
 import { z } from 'zod';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient as createUserClient } from '@/lib/supabase/server';
 import { defineAction } from './wrapper';
 import { ActionError } from './types';
+import { CAP } from '@/lib/auth/capabilities';
 
 /**
- * booking.confirm — the B1 reference action (OP MODEL §5.2 CONFIRMED transition).
- * The wrapper handles auth/validate/authorize + attempted/failed audit; the
- * single atomic RPC `confirm_booking` does ALL writes (booking + hard-block +
- * deposit liability + completed audit) in one transaction. This is the template
- * EVERY future write copies.
+ * booking.confirm — the reference write (OP MODEL §5.2 CONFIRMED transition).
+ *
+ * B2 changes vs B1:
+ *  - org_id is NO LONGER a client input. It is the caller's session-resolved org
+ *    (ctx.orgId) — never trust a client-supplied org for an authenticated call
+ *    (the F-SEC-04 fix).
+ *  - authorize() requires the `booking.confirm` capability (Owner/PM only).
+ *  - the RPC is called via the USER-session client so auth.uid() is set and the
+ *    RPC's own membership+capability self-check runs (defense in depth).
  */
 
 const ConfirmBookingInput = z.object({
-  // B1 accepts orgId explicitly; B2 will derive it from the caller's membership
-  // (ctx.orgId) and REJECT any mismatch — closing the F-SEC-04 cross-tenant hole.
-  orgId: z.string().uuid(),
   hallId: z.string().uuid(),
   eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD'),
   slot: z.enum(['morning', 'evening', 'full_day']),
@@ -35,11 +37,13 @@ interface ConfirmBookingResult {
 export const confirmBooking = defineAction<ConfirmBookingInput, ConfirmBookingResult>({
   name: 'booking.confirm',
   input: ConfirmBookingInput,
-  rpcOwnsCompletion: true, // the RPC writes the atomic 'completed' audit row
+  rpcOwnsCompletion: true,
+  authorize: (ctx) => !!ctx.orgId && ctx.capabilities.includes(CAP.BOOKING_CONFIRM),
   run: async (ctx, input) => {
-    const admin = createAdminClient();
-    const { data, error } = await admin.rpc('confirm_booking', {
-      p_org_id: input.orgId,
+    // User-session client → the RPC sees auth.uid() and self-authorizes.
+    const supabase = await createUserClient();
+    const { data, error } = await supabase.rpc('confirm_booking', {
+      p_org_id: ctx.orgId, // server-resolved, NOT from the client
       p_hall_id: input.hallId,
       p_event_date: input.eventDate,
       p_slot: input.slot,
@@ -52,6 +56,9 @@ export const confirmBooking = defineAction<ConfirmBookingInput, ConfirmBookingRe
     if (error) {
       if (error.code === '23P01' || /slot_taken/.test(error.message)) {
         throw new ActionError('conflict', 'That hall, date and slot is already booked.');
+      }
+      if (error.code === '42501' || /forbidden/.test(error.message)) {
+        throw new ActionError('forbidden', 'You cannot confirm bookings for this property.');
       }
       throw new ActionError('rpc_error', error.message);
     }
