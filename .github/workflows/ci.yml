@@ -1,0 +1,37 @@
+name: CI
+
+# Quality gate on every PR and push to main (RHS had none — PN does not repeat
+# that). Lint + typecheck + production build must all pass. No secrets needed:
+# env access is lazy (lib/env.ts), so the build compiles without Supabase keys.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Contrast check (WCAG AA token pairs)
+        run: npm run check:contrast

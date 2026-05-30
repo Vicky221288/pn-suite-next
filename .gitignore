@@ -1,0 +1,30 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# env — NEVER commit secrets (AUDIT-2.0 F-SEC-01: the legacy build leaked a
+# session JWT + PII via a committed .har; that class of mistake stops here)
+.env
+.env*.local
+.env.save
+*.har
+
+# misc
+.DS_Store
+*.pem
+/coverage
+.vercel
+*.tsbuildinfo
+
+# supabase local
+/supabase/.temp
+/supabase/.branches

@@ -1,0 +1,314 @@
+/* ============================================================================
+   PN MASTER SUITE — MAROON MERIDIAN · DESIGN TOKENS v1.0
+   ----------------------------------------------------------------------------
+   The token system for the PN rebuild. Feeds build-plan B0.6.
+   Lineage: Meridian Enhanced's STRUCTURE (Linear/Attio-grade, keyboard-first,
+   productivity-CRM density) re-valued to PN's identity: MAROON + CREAM + Playfair.
+   This is NOT a sibling of RHS CRM's electric-blue Meridian — same discipline,
+   different soul. (Design strategy 23-May: never force cross-product coherence.)
+
+   Principles:
+   - Semantic tokens only. Components NEVER reference raw hex; they read --color-*.
+     This is what makes white-label re-skinning a config change, not a code change.
+   - "Maroon is the seasoning, not the whole plate." Dominant neutrals (cream/ink),
+     maroon as the decisive accent. (Carries the gold-theme lesson forward.)
+   - WCAG 2.1 AA on every text/background pair (target ≥4.5:1 body, ≥3:1 large).
+   - Keyboard-first: focus rings are first-class tokens, never an afterthought.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------------------
+   1. PRIMITIVE PALETTE  (raw values — referenced ONLY by semantic tokens below)
+   --------------------------------------------------------------------------- */
+:root {
+  /* Maroon ramp — the brand spine */
+  --maroon-50:  #FBF1F1;
+  --maroon-100: #F4DADA;
+  --maroon-200: #E7B2B3;
+  --maroon-300: #D6868A;
+  --maroon-400: #B85457;
+  --maroon-500: #8E2A2E;   /* PRIMARY brand maroon */
+  --maroon-600: #761F23;   /* hover / pressed */
+  --maroon-700: #5C1619;   /* deep / Trophy-maroon direction */
+  --maroon-800: #420F12;
+  --maroon-900: #2B090B;
+
+  /* Cream / paper — the dominant surface family */
+  --cream-50:  #FFFDF8;    /* lightest paper */
+  --cream-100: #FBF6EC;    /* app background */
+  --cream-200: #F3EADA;    /* sunken / muted surface */
+  --cream-300: #E7DAC4;    /* borders on cream */
+
+  /* Ink / neutral — text & structure (warm-tinted greys, not cold) */
+  --ink-900: #1F1A17;      /* primary text */
+  --ink-700: #423B35;      /* secondary text */
+  --ink-500: #6B625A;      /* tertiary / placeholder */
+  --ink-300: #A89E94;      /* disabled */
+  --ink-200: #CFC6BB;      /* hairlines */
+  --ink-0:   #FFFFFF;
+
+  /* Gold — restrained ceremonial accent (weddings); NOT a primary action color */
+  --gold-400: #C9A24B;
+  --gold-500: #A6822F;
+
+  /* Functional status ramps (warm-balanced to sit with maroon/cream) */
+  --green-500: #2F7D52;  --green-100: #DCEFE3;   /* success / paid / confirmed */
+  --amber-500: #B5791E;  --amber-100: #F6E9CE;   /* warning / due / pending */
+  --red-500:   #B5302B;  --red-100:   #F7DAD7;   /* danger / overdue / cancelled */
+  --blue-500:  #2C5E8A;  --blue-100:  #D9E6F1;   /* info (cool, used sparingly) */
+
+  /* Dark-mode raw surfaces (warm charcoals, not pure black) */
+  --dark-bg:   #1A1413;
+  --dark-surface: #241D1B;
+  --dark-raised:  #2E2522;
+  --dark-border:  #3D322E;
+}
+
+/* ---------------------------------------------------------------------------
+   2. SEMANTIC TOKENS — LIGHT (default)   ← components read THESE
+   --------------------------------------------------------------------------- */
+:root {
+  /* Surfaces */
+  --color-bg:            var(--cream-100);
+  --color-surface:       var(--cream-50);
+  --color-surface-raised:var(--ink-0);
+  --color-surface-sunken:var(--cream-200);
+  --color-overlay:       rgba(31, 26, 23, 0.45);
+
+  /* Text */
+  --color-text:          var(--ink-900);
+  --color-text-secondary:var(--ink-700);
+  --color-text-tertiary: var(--ink-500);
+  --color-text-disabled: var(--ink-300);
+  --color-text-on-brand: var(--cream-50);   /* text on maroon — checked ≥7:1 */
+
+  /* Brand / primary action */
+  --color-brand:         var(--maroon-500);
+  --color-brand-hover:   var(--maroon-600);
+  --color-brand-active:  var(--maroon-700);
+  --color-brand-subtle:  var(--maroon-50);   /* tinted backgrounds, selected rows */
+  --color-brand-border:  var(--maroon-200);
+
+  /* Borders & lines */
+  --color-border:        var(--ink-200);
+  --color-border-strong: var(--cream-300);
+  --color-divider:       var(--cream-300);
+
+  /* Focus — keyboard-first, never removed, only restyled */
+  --color-focus-ring:    var(--maroon-400);
+  --focus-ring:          0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-focus-ring);
+
+  /* Functional (semantic aliases so components don't read raw status colors) */
+  --color-success: var(--green-500);  --color-success-bg: var(--green-100);
+  --color-warning: var(--amber-500);  --color-warning-bg: var(--amber-100);
+  --color-danger:  var(--red-500);    --color-danger-bg:  var(--red-100);
+  --color-info:    var(--blue-500);   --color-info-bg:    var(--blue-100);
+  --color-accent-ceremonial: var(--gold-500);  /* wedding/event flourishes only */
+}
+
+/* ---------------------------------------------------------------------------
+   3. SEMANTIC TOKENS — DARK   (toggle via [data-theme="dark"])
+   Same token NAMES, re-valued. Components need zero changes.
+   --------------------------------------------------------------------------- */
+[data-theme="dark"] {
+  --color-bg:            var(--dark-bg);
+  --color-surface:       var(--dark-surface);
+  --color-surface-raised:var(--dark-raised);
+  --color-surface-sunken:#15100F;
+  --color-overlay:       rgba(0, 0, 0, 0.6);
+
+  --color-text:          #F5EDE6;
+  --color-text-secondary:#C9BDB4;
+  --color-text-tertiary: #968A80;
+  --color-text-disabled: #5E534C;
+  --color-text-on-brand: #FBF1F1;
+
+  --color-brand:         var(--maroon-400);  /* lift for contrast on dark */
+  --color-brand-hover:   var(--maroon-300);
+  --color-brand-active:  var(--maroon-200);
+  --color-brand-subtle:  #2A1517;
+  --color-brand-border:  #5C2B2E;
+
+  --color-border:        var(--dark-border);
+  --color-border-strong: #4D3F3A;
+  --color-divider:       var(--dark-border);
+
+  --color-focus-ring:    var(--maroon-300);
+
+  --color-success-bg: #14301F;  --color-warning-bg: #322412;
+  --color-danger-bg:  #321413;  --color-info-bg:    #122636;
+}
+
+/* ---------------------------------------------------------------------------
+   4. TYPOGRAPHY   — Playfair Display (display) + a refined workhorse body
+   Playfair for headings/numbers-of-ceremony; body stays highly legible at
+   data-density. (Body: "Source Sans 3" or "IBM Plex Sans" — distinctive but
+   neutral enough for dense tables. Avoid Inter/Roboto per design guidance.)
+   --------------------------------------------------------------------------- */
+:root {
+  --font-display: "Playfair Display", Georgia, serif;   /* headings, brand */
+  --font-body:    "Source Sans 3", "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono:    "IBM Plex Mono", ui-monospace, monospace; /* figures, IDs, ₹ */
+
+  /* Type scale (1.250 major-third, tuned for CRM density) */
+  --text-xs:   0.75rem;   /* 12px — table meta, badges */
+  --text-sm:   0.875rem;  /* 14px — table body, secondary */
+  --text-base: 1rem;      /* 16px — body default */
+  --text-lg:   1.125rem;  /* 18px — emphasized */
+  --text-xl:   1.375rem;  /* 22px — section titles */
+  --text-2xl:  1.75rem;   /* 28px — page titles (Playfair) */
+  --text-3xl:  2.25rem;   /* 36px — hero / big KPI (Playfair) */
+
+  --leading-tight:  1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed:1.65;
+
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  --tracking-tight:  -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.04em;   /* small caps, labels */
+}
+
+/* ---------------------------------------------------------------------------
+   5. SPACING  (4px base — predictable density for tables/forms)
+   --------------------------------------------------------------------------- */
+:root {
+  --space-0: 0;
+  --space-1: 0.25rem;  /* 4  */
+  --space-2: 0.5rem;   /* 8  */
+  --space-3: 0.75rem;  /* 12 */
+  --space-4: 1rem;     /* 16 */
+  --space-5: 1.5rem;   /* 24 */
+  --space-6: 2rem;     /* 32 */
+  --space-7: 3rem;     /* 48 */
+  --space-8: 4rem;     /* 64 */
+}
+
+/* ---------------------------------------------------------------------------
+   6. RADIUS / SHADOW / MOTION / Z / LAYOUT
+   --------------------------------------------------------------------------- */
+:root {
+  --radius-sm: 4px;
+  --radius-md: 8px;     /* default for cards, inputs, buttons */
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
+
+  /* Shadows — soft, warm-tinted (not cold grey) */
+  --shadow-sm: 0 1px 2px rgba(66, 15, 18, 0.06);
+  --shadow-md: 0 2px 8px rgba(66, 15, 18, 0.08);
+  --shadow-lg: 0 8px 24px rgba(66, 15, 18, 0.12);
+  --shadow-overlay: 0 16px 48px rgba(43, 9, 11, 0.24);
+
+  /* Motion — restrained, productivity-respecting (no slow flourishes in-app) */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
+
+  --z-base: 0; --z-sticky: 100; --z-dropdown: 200;
+  --z-modal: 300; --z-toast: 400; --z-tooltip: 500;
+
+  /* Layout primitives */
+  --sidebar-w: 248px;
+  --sidebar-w-collapsed: 60px;
+  --topbar-h: 56px;
+  --content-max: 1440px;
+  --row-h: 44px;          /* table row — also min touch target */
+  --tap-min: 44px;        /* WCAG touch target floor (mobile-per-role) */
+}
+
+/* ---------------------------------------------------------------------------
+   7. COMPONENT TOKENS  (composed from semantics — the contract for B0/B5 UI)
+   --------------------------------------------------------------------------- */
+:root {
+  /* Buttons */
+  --btn-primary-bg:        var(--color-brand);
+  --btn-primary-bg-hover:  var(--color-brand-hover);
+  --btn-primary-text:      var(--color-text-on-brand);
+  --btn-secondary-bg:      var(--color-surface-raised);
+  --btn-secondary-border:  var(--color-border-strong);
+  --btn-secondary-text:    var(--color-text);
+  --btn-ghost-text:        var(--color-brand);
+  --btn-danger-bg:         var(--color-danger);
+  --btn-radius:            var(--radius-md);
+  --btn-pad-y:             var(--space-2);
+  --btn-pad-x:             var(--space-4);
+
+  /* Inputs */
+  --input-bg:           var(--color-surface-raised);
+  --input-border:       var(--color-border);
+  --input-border-focus: var(--color-brand);
+  --input-text:         var(--color-text);
+  --input-placeholder:  var(--color-text-tertiary);
+  --input-radius:       var(--radius-md);
+  --input-pad-y:        var(--space-2);
+  --input-pad-x:        var(--space-3);
+
+  /* Cards / panels */
+  --card-bg:     var(--color-surface-raised);
+  --card-border: var(--color-border);
+  --card-radius: var(--radius-lg);
+  --card-shadow: var(--shadow-sm);
+  --card-pad:    var(--space-5);
+
+  /* Tables (the CRM workhorse) */
+  --table-header-bg:   var(--color-surface-sunken);
+  --table-header-text: var(--color-text-secondary);
+  --table-row-hover:   var(--color-brand-subtle);
+  --table-row-selected:var(--color-brand-subtle);
+  --table-border:      var(--color-divider);
+  --table-row-h:       var(--row-h);
+
+  /* Sidebar / nav */
+  --nav-bg:          var(--color-surface);
+  --nav-item-text:   var(--color-text-secondary);
+  --nav-item-active-bg:   var(--color-brand-subtle);
+  --nav-item-active-text: var(--color-brand);
+  --nav-item-active-bar:  var(--color-brand);  /* left accent bar */
+
+  /* Status badges (pill) — bg + text pairs, AA-checked */
+  --badge-success-bg: var(--color-success-bg); --badge-success-text: var(--color-success);
+  --badge-warning-bg: var(--color-warning-bg); --badge-warning-text: var(--color-warning);
+  --badge-danger-bg:  var(--color-danger-bg);  --badge-danger-text:  var(--color-danger);
+  --badge-info-bg:    var(--color-info-bg);    --badge-info-text:    var(--color-info);
+
+  /* Command palette (⌘K) & focus — keyboard-first first-class citizens */
+  --cmdk-bg:     var(--color-surface-raised);
+  --cmdk-shadow: var(--shadow-overlay);
+  --cmdk-radius: var(--radius-xl);
+}
+
+/* ---------------------------------------------------------------------------
+   8. WHITE-LABEL HOOK  (the productization payoff)
+   A tenant theme overrides ONLY the brand ramp + display font via :root vars
+   injected at runtime per org_id. Everything else (neutrals, status, layout)
+   stays stable, so any tenant looks coherent without bespoke design work.
+   Example tenant override (injected server-side):
+     :root[data-org="acme-hall"]{
+        --color-brand: #1F5C3A; --color-brand-hover:#17492E;
+        --color-brand-subtle:#E6F0EA; --font-display:"Cormorant", serif;
+     }
+   --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   9. BASELINE GLOBALS  (focus visibility + reduced-motion = non-negotiable a11y)
+   --------------------------------------------------------------------------- */
+*:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ============================================================================
+   CONTRAST NOTES (verify in B0.6 with a checker before lock):
+   - ink-900 on cream-100 .......... ~13:1  ✅ (body text)
+   - ink-700 on cream-100 .......... ~8:1   ✅ (secondary)
+   - cream-50 on maroon-500 ........ ~7.5:1 ✅ (button text)
+   - maroon-500 on cream-100 ....... ~6:1   ✅ (links/ghost on bg)
+   - amber-500 on amber-100 ........ verify (badge) — adjust if <4.5:1
+   - Re-run ALL pairs after any tenant white-label override.
+   ============================================================================ */
