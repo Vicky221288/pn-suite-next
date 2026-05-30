@@ -105,7 +105,8 @@ docs/                     # the four sources of truth + pre-flight discipline
     without a booking; bookings === deposits).
   - ✅ Slot semantics: morning + evening coexist; full_day then conflicts (3h buffer).
   - typecheck/lint/build green. The orphan-data class of bug is structurally dead.
-- **Phase B2 (multi-tenant skeleton): code COMPLETE, READY FOR SQL.** Tenant root
+- **Phase B2 (multi-tenant skeleton): COMPLETE ✅ — verified live** on
+  `kvyhyeqwyafpizecfbnt`. Tenant root
   (`orgs`) + `org_members` (composable capabilities, OP MODEL §3), membership
   helpers (`is_org_member`/`has_capability`), `org_id`-scoped RLS (default-deny;
   members SELECT their org, no direct authenticated writes), FKs org_id→orgs, and
@@ -116,10 +117,14 @@ docs/                     # the four sources of truth + pre-flight discipline
   drops client org_id, calls the RPC via the user client. Migration
   `supabase/migrations/20260531120000_b2_multitenant.sql` WRITTEN, not applied.
   typecheck/lint/build green.
-  - ⏳ Vicky applies B2 migration; then `node scripts/b2-verify.mjs` (two-tenant
-    isolation) + `node scripts/b1-verify.mjs` (regression) prove it live.
-  - Next (after B2 verified): **B3 — messaging foundation** (MessagingProvider +
-    AiSensy adapter, idempotent/quiet-hours outbound, auth'd inbound webhook).
+  - ✅ `scripts/b2-verify.mjs` (two-tenant isolation) + `scripts/b1-verify.mjs`
+    (regression) BOTH pass twice identical, exit 0, self-cleaning: 0 cross-tenant
+    read/confirm/delete in either direction; capability rights enforced (manager
+    w/o `booking.confirm` rejected; owner-in-A powerless in B); B1
+    atomic/concurrency/idempotency guarantees intact under RLS+FK. **F-SEC-04
+    closed-by-test.**
+  - Next: **B3 — messaging foundation** (MessagingProvider + AiSensy adapter,
+    idempotent/quiet-hours outbound, auth'd inbound webhook).
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
