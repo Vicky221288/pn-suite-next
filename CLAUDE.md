@@ -93,17 +93,20 @@ docs/                     # the four sources of truth + pre-flight discipline
     parent link) writes, reads back, and self-cleans against the live
     `audit_log` table (`scripts/probe-audit.mjs`).
   - gate-2 (Vercel link/deploy) is Vicky's — not a B0 blocker.
-- **Phase B1 (atomic write foundation): code COMPLETE, READY FOR SQL.** The
-  wrapper+RPC pattern is built and codified (`docs/WRITE-PATTERN.md`): the
-  `confirm_booking` atomic RPC (booking→hard-block→deposit-liability→in-tx audit,
-  all-or-nothing) + the `booking.confirm` action + idempotency + a GiST `EXCLUDE`
-  double-booking guard. Migration `supabase/migrations/20260531090000_b1_atomic_booking.sql`
-  is WRITTEN, not applied. typecheck/lint/build green.
-  - ⏳ Vicky applies the B1 migration; then `node scripts/b1-verify.mjs` proves
-    concurrency (1 win / N-1 clean fails / 0 orphans), idempotency (single
-    effect), rollback (all-or-nothing), and slot semantics — live.
-  - Next (after B1 verified): **B2 — multi-tenant skeleton** (org_id RLS policies,
-    F-SEC-04 fix, two-tenant isolation test).
+- **Phase B1 (atomic write foundation): COMPLETE ✅ — verified live** on
+  `kvyhyeqwyafpizecfbnt` (migration applied). The wrapper+RPC pattern is built and
+  codified (`docs/WRITE-PATTERN.md`): `confirm_booking` atomic RPC + `booking.confirm`
+  action + idempotency + GiST `EXCLUDE` double-booking guard. `scripts/b1-verify.mjs`
+  passes deterministically (run twice, identical, exit 0, self-cleaning):
+  - ✅ Concurrency (S4): 5 racing confirms → exactly 1 winner, 4 clean `slot_taken`,
+    1 booking + 1 block + 1 deposit + 1 completed audit, 0 orphans.
+  - ✅ Idempotency (inv. #2): same key twice → one row, 2nd is a no-op.
+  - ✅ All-or-nothing: forced mid-tx failure → zero rows persist (no deposit
+    without a booking; bookings === deposits).
+  - ✅ Slot semantics: morning + evening coexist; full_day then conflicts (3h buffer).
+  - typecheck/lint/build green. The orphan-data class of bug is structurally dead.
+  - Next: **B2 — multi-tenant skeleton** (org_id RLS policies, F-SEC-04 fix,
+    two-tenant isolation test).
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
