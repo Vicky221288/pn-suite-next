@@ -1,0 +1,10 @@
+# Supabase CLI config. `supabase db push` applies supabase/migrations/* to the
+# linked project. Link once with:  supabase link --project-ref <PN-project-ref>
+# Migrations are git-tracked; secrets/.temp are gitignored.
+project_id = "pn-suite-next"
+
+[db]
+major_version = 17
+
+[db.migrations]
+enabled = true
