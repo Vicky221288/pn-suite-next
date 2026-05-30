@@ -55,8 +55,9 @@ async function check(label, p, okCodes) {
 console.log('  ' + '-'.repeat(50));
 // 1. Auth health (anon).
 await check('auth/v1/health (anon)', fetch(`${url}/auth/v1/health`, { headers: { apikey: anon } }), [200]);
-// 2. REST root reachable (anon).
-await check('rest/v1 root (anon)', fetch(`${url}/rest/v1/`, { headers: { apikey: anon } }), [200, 404]);
+// 2. REST root reachable (anon). A bare REST root commonly returns 401 (needs a
+//    table path / RLS context) — that still proves reachability.
+await check('rest/v1 reachable (anon)', fetch(`${url}/rest/v1/`, { headers: { apikey: anon } }), [200, 401, 404]);
 // 3. Service-role auth admin (proves the service key works + is privileged).
 await check(
   'auth/v1/admin/users (service-role)',
