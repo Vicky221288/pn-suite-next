@@ -80,7 +80,7 @@ docs/                     # the four sources of truth + pre-flight discipline
 ```
 
 ## Build state
-- **Phase B0 (genesis & guardrails): code COMPLETE; gate-1 PARTIALLY verified**
+- **Phase B0 (genesis & guardrails): COMPLETE ✅ — all exit criteria met**
   against the fresh `kvyhyeqwyafpizecfbnt` project. Scaffold, dual-client auth
   spine, admin client + loud audit util, the `ActionResult<T>` wrapper, IST
   date-utils, Maroon Meridian tokens (light+dark, 12/12 AA), CI, and docs are in.
@@ -89,10 +89,11 @@ docs/                     # the four sources of truth + pre-flight discipline
     admin (200); middleware guard (`/today`,`/`,`/*` → 307 → `/login`; `/login`
     200); end-to-end auth flow (createUser → signIn → getUser validates →
     cleanup, 0 failures, self-cleaning temp user).
-  - ⏳ Only open item: apply `supabase/migrations/20260530120000_b0_audit_log.sql`
-    (Vicky runs SQL) + `node scripts/probe-audit.mjs` → green closes the
-    audit-write probe. gate-2 (Vercel link) is Vicky's.
-  - Next: **B1 — the atomic write foundation.**
+  - ✅ audit-write probe GREEN: the two-write pattern (attempted → completed +
+    parent link) writes, reads back, and self-cleans against the live
+    `audit_log` table (`scripts/probe-audit.mjs`).
+  - gate-2 (Vercel link/deploy) is Vicky's — not a B0 blocker.
+  - Next: **B1 — the atomic write foundation** (wrapper + atomic Postgres RPC).
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
