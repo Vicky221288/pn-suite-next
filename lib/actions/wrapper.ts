@@ -22,8 +22,10 @@ import { ActionError, type ActionResult, err, ok } from './types';
 export interface ActionContext {
   /** authenticated auth user id. */
   userId: string;
-  /** tenant scope resolved for this user (B2 fills org resolution; B0/B1 stub). */
+  /** tenant scope resolved from the caller's SESSION membership (never client input). */
   orgId: string | null;
+  /** capabilities the caller holds in that org (OP MODEL §3). */
+  capabilities: string[];
   /** id of the 'attempted' audit row — pass into the RPC as p_parent_audit_id. */
   auditAttemptedId: string | null;
 }
@@ -52,11 +54,25 @@ async function resolveContext(): Promise<ActionContext | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
-  // B2: resolve org_id from membership. For now, carry it on user metadata if
-  // present, else null (system/pre-tenant). Never hardcode a property (inv. #3).
-  const orgId = (user.app_metadata?.org_id as string | undefined) ?? null;
-  return { userId: user.id, orgId, auditAttemptedId: null };
+  if (!user) return null; // unauthenticated
+
+  // B2: org + capabilities resolved from the caller's SESSION membership via the
+  // RLS-enforced user client — never from client input (the F-SEC-04 fix). A
+  // user with no membership gets orgId=null/[] and is rejected by any action
+  // whose authorize() requires an org capability.
+  const { data } = await supabase
+    .from('org_members')
+    .select('org_id, capabilities')
+    .eq('user_id', user.id)
+    .limit(1)
+    .maybeSingle();
+
+  return {
+    userId: user.id,
+    orgId: (data?.org_id as string | undefined) ?? null,
+    capabilities: (data?.capabilities as string[] | undefined) ?? [],
+    auditAttemptedId: null,
+  };
 }
 
 export function defineAction<TInput, TOutput>(config: DefineActionConfig<TInput, TOutput>) {

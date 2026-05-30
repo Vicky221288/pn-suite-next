@@ -71,7 +71,7 @@ lib/
   actions/{types,wrapper,ping,booking}.ts  # ActionResult<T> + wrapper + ping + booking.confirm (B1 ref)
   audit/emit.ts           # loud two-write audit util
   today/date-utils.ts     # IST-correct dates (fixes AUDIT F-DATA-02)
-  auth/context.ts         # role/tenant context (stub → B2)
+  auth/{context,authorize,capabilities}.ts  # session→org+capabilities gate (B2, F-SEC-04)
   env.ts                  # lazy, validated env access
 components/ui/, components/*   # token-driven primitives
 scripts/check-contrast.mjs     # WCAG AA gate on token pairs
@@ -105,8 +105,21 @@ docs/                     # the four sources of truth + pre-flight discipline
     without a booking; bookings === deposits).
   - ✅ Slot semantics: morning + evening coexist; full_day then conflicts (3h buffer).
   - typecheck/lint/build green. The orphan-data class of bug is structurally dead.
-  - Next: **B2 — multi-tenant skeleton** (org_id RLS policies, F-SEC-04 fix,
-    two-tenant isolation test).
+- **Phase B2 (multi-tenant skeleton): code COMPLETE, READY FOR SQL.** Tenant root
+  (`orgs`) + `org_members` (composable capabilities, OP MODEL §3), membership
+  helpers (`is_org_member`/`has_capability`), `org_id`-scoped RLS (default-deny;
+  members SELECT their org, no direct authenticated writes), FKs org_id→orgs, and
+  the **F-SEC-04 fix**: `confirm_booking` now self-authorizes on `auth.uid()`
+  (membership + `booking.confirm`) so cross-tenant confirm is impossible even via
+  a forged RPC call. App gate: `lib/auth/{authorize,capabilities}.ts` +
+  wrapper resolves org/caps from session (never client input); booking action
+  drops client org_id, calls the RPC via the user client. Migration
+  `supabase/migrations/20260531120000_b2_multitenant.sql` WRITTEN, not applied.
+  typecheck/lint/build green.
+  - ⏳ Vicky applies B2 migration; then `node scripts/b2-verify.mjs` (two-tenant
+    isolation) + `node scripts/b1-verify.mjs` (regression) prove it live.
+  - Next (after B2 verified): **B3 — messaging foundation** (MessagingProvider +
+    AiSensy adapter, idempotent/quiet-hours outbound, auth'd inbound webhook).
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
@@ -121,6 +134,10 @@ WCAG AA: `--green-500` #2F7D52→#256840, `--amber-500` #B5791E→#8A5912, dark
   `docs/WRITE-PATTERN.md` is the ONLY sanctioned write path — review rejects
   sequential client/server writes. Conflicts are enforced by DB constraints
   (e.g. GiST `EXCLUDE`), never check-then-insert.
+- Do NOT trust a client-supplied `org_id` for an authenticated call — resolve it
+  from the session (the F-SEC-04 fix). Every new table ships RLS-default-deny +
+  an `org_id`-scoped SELECT policy; writes go through a SECURITY DEFINER RPC that
+  self-authorizes on `auth.uid()`. No god-role: even `owner` is property-scoped.
 - Do NOT hardcode any single-property value ("PN", "10 rooms", GSTIN, addresses).
 - Do NOT commit secrets or `.har`/`.env*` files (AUDIT F-SEC-01 — the legacy leak).
 - Do NOT push or deploy — that's Vicky's.
