@@ -14,6 +14,17 @@ This is an **independent project**: PN's own GitHub / Supabase / Vercel / email,
 fully separate from RHS CRM NXT (which is only a *convention donor* — see
 `docs/REUSE-ANALYSIS.md`). No shared infra, no shared credentials.
 
+## Supabase projects (read before any schema work)
+- **New build (THIS repo, the active target):** ref `abqmwxznfpcustomer`
+  (`abqmwxznfpcustomer.supabase.co`) — a **fresh, empty** project. All migrations
+  and the running app point here (`.env.local`). gate-1 verified live: connectivity
+  (anon + service-role) and the end-to-end auth flow both green.
+- **Legacy:** ref `rvabhitxdjeqwgkszbvs` — the OLD React/Vite build's project.
+  **Untouched.** It is a **later migration SOURCE only** (we will lift PN's
+  historical data from it during the spine/data-migration wave). Never point the
+  rebuild at it; never write to it.
+- RHS CRM NXT runs on its own separate project — no relation to either.
+
 ## Sources of truth (read in this order)
 1. `docs/PN-OP-MODEL-v1.2.md` — the operating model. All §12 decisions LOCKED.
    Internalize §10 (multi-tenant), §6 (automation/messaging), §11 (invariants).
@@ -67,12 +78,17 @@ docs/                     # the four sources of truth + pre-flight discipline
 ```
 
 ## Build state
-- **Phase B0 (genesis & guardrails): COMPLETE pending gate-1 verification.**
-  Scaffold, dual-client auth spine, admin client + loud audit util, the
-  `ActionResult<T>` wrapper, IST date-utils, Maroon Meridian tokens (light+dark,
-  all 12 contrast pairs AA-verified), CI, and docs are in. The live auth flow +
-  the audit-write probe await PN's Supabase keys (gate-1) and a deployed
-  `audit_log` table (schema phase). Next: **B1 — the atomic write foundation.**
+- **Phase B0 (genesis & guardrails): COMPLETE — gate-1 verified live** against
+  the fresh `abqmwxznfpcustomer` project. Scaffold, dual-client auth spine, admin
+  client + loud audit util, the `ActionResult<T>` wrapper, IST date-utils, Maroon
+  Meridian tokens (light+dark, 12/12 AA), CI, and docs are in. Verified live:
+  connectivity (anon + service-role), the end-to-end auth flow (createUser →
+  signIn → getUser → cleanup, 0 failures), and the middleware guard
+  (`/today`,`/`,`/*` → 307 → `/login`). `npm audit` 0; typecheck/lint/build green.
+  - **Remaining to fully close the audit-write probe:** apply
+    `supabase/migrations/20260530120000_b0_audit_log.sql` (Vicky runs SQL), then
+    `node scripts/probe-audit.mjs` → green. gate-2 (Vercel link) is Vicky's.
+  - Next: **B1 — the atomic write foundation.**
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
