@@ -18,9 +18,9 @@ fully separate from RHS CRM NXT (which is only a *convention donor* — see
 - **New build (THIS repo, the active target):** ref `kvyhyeqwyafpizecfbnt`
   (`kvyhyeqwyafpizecfbnt.supabase.co`) — a **fresh, empty** project. All migrations
   and the running app point here (`.env.local`). Verified live: anon connectivity
-  (health 200) + middleware guard. ⚠️ The **service-role key in `.env.local` is
-  rejected** (401 "Invalid API key") → admin client / auth-flow / audit-write are
-  BLOCKED until Vicky re-pastes the full, exact service_role secret.
+  (health 200) + middleware guard + service-role admin (200) + end-to-end auth
+  flow (createUser → signIn → getUser → cleanup, 0 failures). The audit-write
+  probe closes once `audit_log` is applied (Vicky runs SQL).
 - **Legacy:** ref `rvabhitxdjeqwgkszbvs` — the OLD React/Vite build's project.
   **Untouched.** It is a **later migration SOURCE only** (we will lift PN's
   historical data from it during the spine/data-migration wave). Never point the
@@ -85,15 +85,14 @@ docs/                     # the four sources of truth + pre-flight discipline
   spine, admin client + loud audit util, the `ActionResult<T>` wrapper, IST
   date-utils, Maroon Meridian tokens (light+dark, 12/12 AA), CI, and docs are in.
   Build gate green: `npm audit` 0; typecheck/lint/build/contrast all pass.
-  - ✅ Verified live: anon connectivity (health 200, REST reachable); middleware
-    guard (`/today`,`/`,`/*` → 307 → `/login`; `/login` 200).
-  - ⛔ BLOCKED: the **service-role key in `.env.local` is rejected** (401
-    "Invalid API key") → admin client, the end-to-end auth flow (createUser/
-    signIn), and the audit-write probe all fail. Needs Vicky to re-paste the
-    FULL, exact service-role secret (copy from Supabase → Settings → API).
-  - ⏳ Then: apply `supabase/migrations/20260530120000_b0_audit_log.sql` (Vicky
-    runs SQL) + `node scripts/probe-audit.mjs` → green; gate-2 (Vercel) is Vicky's.
-  - Next (after gate-1 fully green): **B1 — the atomic write foundation.**
+  - ✅ Verified live (gate-1 GREEN): anon connectivity (health 200); service-role
+    admin (200); middleware guard (`/today`,`/`,`/*` → 307 → `/login`; `/login`
+    200); end-to-end auth flow (createUser → signIn → getUser validates →
+    cleanup, 0 failures, self-cleaning temp user).
+  - ⏳ Only open item: apply `supabase/migrations/20260530120000_b0_audit_log.sql`
+    (Vicky runs SQL) + `node scripts/probe-audit.mjs` → green closes the
+    audit-write probe. gate-2 (Vercel link) is Vicky's.
+  - Next: **B1 — the atomic write foundation.**
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
