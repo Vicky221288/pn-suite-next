@@ -39,3 +39,20 @@ export const err = (
   message: string,
   details?: Record<string, string[]>,
 ): ActionErr => ({ ok: false, error, message, details });
+
+/**
+ * Throw from an action's `run` to surface a typed, UI-mappable failure (e.g. an
+ * RPC that rejected with 'slot_taken'). The wrapper turns it into the matching
+ * ActionErr + a parent-linked 'failed' audit row. Anything else thrown becomes
+ * a generic 'rpc_error'.
+ */
+export class ActionError extends Error {
+  constructor(
+    public readonly code: ErrorCode,
+    message: string,
+    public readonly details?: Record<string, string[]>,
+  ) {
+    super(message);
+    this.name = 'ActionError';
+  }
+}

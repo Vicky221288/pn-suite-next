@@ -68,7 +68,7 @@ app/                      # App Router
   layout.tsx, globals.css, tokens.css   # Maroon Meridian token layer
 lib/
   supabase/{client,server,admin,middleware}.ts   # dual-client trust model
-  actions/{types,wrapper,ping}.ts   # ActionResult<T> + THE wrapper + example
+  actions/{types,wrapper,ping,booking}.ts  # ActionResult<T> + wrapper + ping + booking.confirm (B1 ref)
   audit/emit.ts           # loud two-write audit util
   today/date-utils.ts     # IST-correct dates (fixes AUDIT F-DATA-02)
   auth/context.ts         # role/tenant context (stub → B2)
@@ -93,7 +93,17 @@ docs/                     # the four sources of truth + pre-flight discipline
     parent link) writes, reads back, and self-cleans against the live
     `audit_log` table (`scripts/probe-audit.mjs`).
   - gate-2 (Vercel link/deploy) is Vicky's — not a B0 blocker.
-  - Next: **B1 — the atomic write foundation** (wrapper + atomic Postgres RPC).
+- **Phase B1 (atomic write foundation): code COMPLETE, READY FOR SQL.** The
+  wrapper+RPC pattern is built and codified (`docs/WRITE-PATTERN.md`): the
+  `confirm_booking` atomic RPC (booking→hard-block→deposit-liability→in-tx audit,
+  all-or-nothing) + the `booking.confirm` action + idempotency + a GiST `EXCLUDE`
+  double-booking guard. Migration `supabase/migrations/20260531090000_b1_atomic_booking.sql`
+  is WRITTEN, not applied. typecheck/lint/build green.
+  - ⏳ Vicky applies the B1 migration; then `node scripts/b1-verify.mjs` proves
+    concurrency (1 win / N-1 clean fails / 0 orphans), idempotency (single
+    effect), rollback (all-or-nothing), and slot semantics — live.
+  - Next (after B1 verified): **B2 — multi-tenant skeleton** (org_id RLS policies,
+    F-SEC-04 fix, two-tenant isolation test).
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
@@ -104,7 +114,10 @@ WCAG AA: `--green-500` #2F7D52→#256840, `--amber-500` #B5791E→#8A5912, dark
 ## Hard don'ts
 - Do NOT import `lib/supabase/admin` into client code (the `'server-only'` guard
   enforces this; a violation is a P0 security incident).
-- Do NOT write multi-step (non-atomic) mutations.
+- Do NOT write multi-step (non-atomic) mutations. The wrapper+RPC pattern in
+  `docs/WRITE-PATTERN.md` is the ONLY sanctioned write path — review rejects
+  sequential client/server writes. Conflicts are enforced by DB constraints
+  (e.g. GiST `EXCLUDE`), never check-then-insert.
 - Do NOT hardcode any single-property value ("PN", "10 rooms", GSTIN, addresses).
 - Do NOT commit secrets or `.har`/`.env*` files (AUDIT F-SEC-01 — the legacy leak).
 - Do NOT push or deploy — that's Vicky's.

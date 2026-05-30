@@ -2,31 +2,30 @@ import 'server-only';
 import { z } from 'zod';
 import { emitAudit, type AuditEvent } from '@/lib/audit/emit';
 import { createClient as createUserClient } from '@/lib/supabase/server';
-import { type ActionResult, err, ok } from './types';
+import { ActionError, type ActionResult, err, ok } from './types';
 
 /**
  * THE WRAPPER — the mandatory template for every PN write (OP MODEL inv. #1).
  *
- * It marries rhs-crm-next's best convention (server-action contract + two-write
- * audit) to the exact thing RHS got wrong (RHS has zero RPCs and a documented
- * orphan-data bug). The wrapper enforces the sequence:
+ * Sequence: authenticate → validate (zod) → authorize → audit:attempted → run
+ * (a single ATOMIC Postgres RPC) → audit:completed | audit:failed.
  *
- *   authenticate → validate (zod) → authorize → audit:attempted →
- *   run (an ATOMIC Postgres RPC) → audit:completed | audit:failed
- *
- * The `run` callback MUST perform its writes in a SINGLE atomic unit — i.e. call
- * a Postgres function via `admin.rpc('fn', args)` (built in B1). Multi-step
- * client/server writes are forbidden (the legacy build's #1 failure, AUDIT-2.0).
- *
- * In B0 this is the contract only; B1 supplies the first real RPC and the
- * concurrency proof. The shape below is what every action will fill in.
+ * Audit split (B1, improves on RHS): the 'attempted' and 'failed' rows are
+ * written by the wrapper OUTSIDE the RPC's transaction, so a failed attempt is
+ * durably recorded even though the mutation rolled back. The 'completed' row is
+ * written INSIDE the RPC's transaction (atomic with the data) when the action
+ * sets `rpcOwnsCompletion` — so a 'completed' audit can never outlive a failed
+ * write. The wrapper passes the attempted-audit id to `run` via
+ * `ctx.auditAttemptedId` so the RPC can parent-link its completed row.
  */
 
 export interface ActionContext {
   /** authenticated auth user id. */
   userId: string;
-  /** tenant scope resolved for this user (B2 fills org resolution; B0 stub). */
+  /** tenant scope resolved for this user (B2 fills org resolution; B0/B1 stub). */
   orgId: string | null;
+  /** id of the 'attempted' audit row — pass into the RPC as p_parent_audit_id. */
+  auditAttemptedId: string | null;
 }
 
 interface DefineActionConfig<TInput, TOutput> {
@@ -40,13 +39,14 @@ interface DefineActionConfig<TInput, TOutput> {
   run: (ctx: ActionContext, input: TInput) => Promise<TOutput>;
   /** optional: describe the entity for the audit trail. */
   entity?: (input: TInput, output: TOutput | null) => { type?: string; id?: string };
+  /**
+   * Set true when the RPC writes its own atomic 'completed' audit row inside its
+   * transaction (the B1 pattern). The wrapper then skips its own 'completed'
+   * write to avoid double-auditing.
+   */
+  rpcOwnsCompletion?: boolean;
 }
 
-/**
- * Resolve the current action context (auth user + tenant scope).
- * B0: orgId is resolved by the auth-context stub (single tenant for now).
- * B2: replaces the stub with real org membership resolution.
- */
 async function resolveContext(): Promise<ActionContext | null> {
   const supabase = await createUserClient();
   const {
@@ -56,7 +56,7 @@ async function resolveContext(): Promise<ActionContext | null> {
   // B2: resolve org_id from membership. For now, carry it on user metadata if
   // present, else null (system/pre-tenant). Never hardcode a property (inv. #3).
   const orgId = (user.app_metadata?.org_id as string | undefined) ?? null;
-  return { userId: user.id, orgId };
+  return { userId: user.id, orgId, auditAttemptedId: null };
 }
 
 export function defineAction<TInput, TOutput>(config: DefineActionConfig<TInput, TOutput>) {
@@ -78,7 +78,7 @@ export function defineAction<TInput, TOutput>(config: DefineActionConfig<TInput,
       if (!allowed) return err('forbidden', 'You do not have permission to do that.');
     }
 
-    // 4. Audit: attempted (BEFORE the mutation).
+    // 4. Audit: attempted (BEFORE the mutation, durable across a rollback).
     const base: Omit<AuditEvent, 'subEvent'> = {
       orgId: ctx.orgId,
       action: config.name,
@@ -86,10 +86,15 @@ export function defineAction<TInput, TOutput>(config: DefineActionConfig<TInput,
       ...config.entity?.(input, null),
     };
     const attemptedId = await emitAudit({ ...base, subEvent: 'attempted' });
+    ctx.auditAttemptedId = attemptedId;
 
     // 5. Run the ATOMIC mutation, then audit the outcome.
     try {
       const output = await config.run(ctx, input);
+      if (config.rpcOwnsCompletion) {
+        // The RPC already wrote the atomic 'completed' row inside its tx.
+        return ok(output, attemptedId ?? undefined);
+      }
       const completedId = await emitAudit({
         ...base,
         ...config.entity?.(input, output),
@@ -98,15 +103,17 @@ export function defineAction<TInput, TOutput>(config: DefineActionConfig<TInput,
       });
       return ok(output, completedId ?? undefined);
     } catch (e) {
+      const isTyped = e instanceof ActionError;
       const message = e instanceof Error ? e.message : 'Action failed.';
+      const code = isTyped ? e.code : 'rpc_error';
       await emitAudit({
         ...base,
         subEvent: 'failed',
         parentAuditId: attemptedId ?? undefined,
-        errorCode: 'rpc_error',
+        errorCode: code,
         errorMessage: message,
       });
-      return err('rpc_error', message);
+      return err(code, message, isTyped ? e.details : undefined);
     }
   };
 }
