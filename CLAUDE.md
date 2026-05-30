@@ -19,8 +19,8 @@ fully separate from RHS CRM NXT (which is only a *convention donor* — see
   (`kvyhyeqwyafpizecfbnt.supabase.co`) — a **fresh, empty** project. All migrations
   and the running app point here (`.env.local`). Verified live: anon connectivity
   (health 200) + middleware guard. ⚠️ The **service-role key in `.env.local` is
-  truncated** (≈40 chars; a real service_role JWT is ~200+) → admin/auth-flow/
-  audit-write are BLOCKED until Vicky re-pastes the full key.
+  rejected** (401 "Invalid API key") → admin client / auth-flow / audit-write are
+  BLOCKED until Vicky re-pastes the full, exact service_role secret.
 - **Legacy:** ref `rvabhitxdjeqwgkszbvs` — the OLD React/Vite build's project.
   **Untouched.** It is a **later migration SOURCE only** (we will lift PN's
   historical data from it during the spine/data-migration wave). Never point the
@@ -87,9 +87,10 @@ docs/                     # the four sources of truth + pre-flight discipline
   Build gate green: `npm audit` 0; typecheck/lint/build/contrast all pass.
   - ✅ Verified live: anon connectivity (health 200, REST reachable); middleware
     guard (`/today`,`/`,`/*` → 307 → `/login`; `/login` 200).
-  - ⛔ BLOCKED: the **service-role key in `.env.local` is truncated** (~40 chars)
-    → admin client, the end-to-end auth flow (createUser/signIn), and the
-    audit-write probe all 401. Needs Vicky to re-paste the FULL service-role key.
+  - ⛔ BLOCKED: the **service-role key in `.env.local` is rejected** (401
+    "Invalid API key") → admin client, the end-to-end auth flow (createUser/
+    signIn), and the audit-write probe all fail. Needs Vicky to re-paste the
+    FULL, exact service-role secret (copy from Supabase → Settings → API).
   - ⏳ Then: apply `supabase/migrations/20260530120000_b0_audit_log.sql` (Vicky
     runs SQL) + `node scripts/probe-audit.mjs` → green; gate-2 (Vercel) is Vicky's.
   - Next (after gate-1 fully green): **B1 — the atomic write foundation.**
