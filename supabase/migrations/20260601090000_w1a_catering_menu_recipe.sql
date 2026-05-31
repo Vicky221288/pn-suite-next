@@ -20,9 +20,13 @@ create table if not exists public.catering_menu_items (
   supply_type           text,            -- GST TAG only (e.g. 'catering_composite'); rate resolved later by the GST engine — never stored here
   active                boolean not null default true,
   created_at            timestamptz not null default now(),
-  updated_at            timestamptz not null default now(),
-  constraint uq_catering_menu_org_name unique (org_id, lower(btrim(name)))
+  updated_at            timestamptz not null default now()
 );
+-- normalized-name uniqueness must be an INDEX — a table-level UNIQUE constraint
+-- cannot reference an expression like lower(btrim(name)) (same pattern as the W0
+-- guest-dedup index).
+create unique index if not exists uq_catering_menu_org_name
+  on public.catering_menu_items (org_id, lower(btrim(name)));
 create index if not exists idx_catering_menu_org on public.catering_menu_items (org_id);
 create index if not exists idx_catering_menu_org_cat on public.catering_menu_items (org_id, category);
 
