@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getQuoteSummary } from '@/lib/actions/catering-quote';
 import { formatINR } from '@/lib/utils';
+import { AcceptQuoteButton } from '@/components/accept-quote-button';
 
 interface QLine { menu_item_id: string; name: string; unit_selling_price: number; line_selling: number; line_food_cost: number | null; line_margin: number | null }
 interface QSummary { quote_id: string; guest_count: number; status: string; can_see_cost: boolean; total_selling: number; total_food_cost: number | null; total_margin: number | null; lines: QLine[] }
@@ -28,6 +29,7 @@ export default async function QuoteSummaryPage({ params }: { params: Promise<{ i
             <span style={{ color: 'var(--color-text-tertiary)' }}>Cost &amp; margin hidden for your role</span>
           )}
         </div>
+        <div className="mt-3"><AcceptQuoteButton quoteId={q.quote_id} status={q.status} /></div>
       </section>
       <section style={card}>
         <h2 style={h2}>Lines (per-plate × {q.guest_count})</h2>

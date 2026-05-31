@@ -269,7 +269,30 @@ docs/                     # the four sources of truth + pre-flight discipline
         margin 78300), cost-drift moves margin (→73500) but NOT selling, package
         pre-fill, margin gate (Owner+Catering-Lead see, operative doesn't), org
         isolation, audited writes.
-    - **W1c** — BEO (function sheet) + guest-guarantee, shared with the Hall event.
+    - **W1c — BEO (Banquet Event Order): COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+      BEO attaches to the **shared `events` spine** — one wedding = one Event (no
+      parallel catering-only event object). `events` ALTERed: `booking_id`/`slot`
+      → nullable, ADD `guest_id` + `event_type`, so a standalone catering job lives
+      on the spine. `generate_beo` reuses the Guest's existing Event for the date
+      (e.g. a Hall event) or creates one. Tables: `catering_beos` (beo_type
+      kitchen|foh, version, status draft→sent→signed, **guest_count vs distinct
+      guest_guarantee** — the contracted billable min for W1e, dietary_flags pulled
+      from the Guest, signature name/at/method) + `catering_beo_lines` (menu
+      snapshot from the accepted quote). RPCs: `accept_quote`, `generate_beo`
+      (versioned; multiple BEOs per event), `update_beo` (**rejected once signed —
+      immutable**), `send_beo`, `sign_beo` (terminal + records signature). All
+      atomic + audited + tenant-scoped. Migration
+      `20260601150000_w1c_catering_beo.sql` WRITTEN, not applied. UI:
+      /catering/beo (generate from accepted quote) + /catering/beo/[id] (view, mark
+      sent, capture signature); Accept-quote button on /catering/quotes/[id].
+      Cost-visibility carve-out logged in **`docs/KNOWN-LIMITATIONS.md` (KL-1)** —
+      raw `inventory_items.cost` is member-readable; margin gate is at quote/BEO
+      level, not column-level RLS; org-wide cost-column hardening is a later pass.
+      - Harness `scripts/w1c-verify.mjs` (run ×2): accepted quote → BEO on shared
+        Event (NEW spine event, and SAME event when the Guest already has a Hall
+        event), guest_count distinct from guest_guarantee, kitchen+FOH BEOs on one
+        event, dietary from Guest, send→sign→signed records signature, signed BEO
+        rejects edits (immutable), org isolation, audited.
     - **W1d** — kitchen production / KOT + purchase planning (PO from booked recipes) + consumption draw-down (W0 inventory).
     - **W1e** — catering billing line on the consolidated GST invoice (composite-led) + per-event profitability.
   - **W2–4 — HALL completion** (contracts/e-sign, payment milestones, resource
