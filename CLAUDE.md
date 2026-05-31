@@ -504,7 +504,7 @@ docs/                     # the four sources of truth + pre-flight discipline
         select / embed / unit_cost / scale_recipe (all paths); safe columns still
         read; Owner/PM + service_role engine cost reads intact; quote_summary still
         gated; org isolation.
-    - **KL-3 — Storage for photo-proof: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+    - **KL-3 — Storage for photo-proof: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt (kl3-verify ×2, exit 0).
       PRIVATE `proof-photos` bucket (migration: `insert into storage.buckets`
       public=false, image-only, 10 MB cap) + org-scoped RLS on `storage.objects`
       (path `{org_id}/{entity}/{id}/{file}`; policies gate on
@@ -519,13 +519,13 @@ docs/                     # the four sources of truth + pre-flight discipline
       signed URL. Wired into `checklist-actions` (W2) + `housekeeping-board` (S3),
       replacing the old `window.prompt` ref. **The photo-proof gate is UNCHANGED** —
       completion still rejects an empty `photo_ref`; the ref is now a real object
-      key. Migration `20260602090000_kl3_storage_proof_photos.sql` WRITTEN, not
-      applied. typecheck/lint/build green. **docs/KNOWN-LIMITATIONS.md KL-3 → CLOSED.**
+      key. Migration `20260602090000_kl3_storage_proof_photos.sql` APPLIED.
+      typecheck/lint/build green. **docs/KNOWN-LIMITATIONS.md KL-3 → CLOSED.**
       - Harness `scripts/kl3-verify.mjs` (run ×2): upload→path→signed-URL retrieval;
         bucket private (public URL fails); org-A member cannot sign/download/upload
         org-B photos (RLS isolation); W2 + S3 gates still reject no-ref and accept a
         real uploaded path; self-cleaning (removes objects + orgs).
-    - **🔒 HARDENING PASS (KL-1 + KL-3) COMPLETE** (KL-1 verified live; KL-3 awaiting apply+verify).
+    - **🔒 HARDENING PASS (KL-1 + KL-3) COMPLETE & verified live.** Remaining KL: KL-4 (Form C → FRRO e-submission), parked in the external-integration lane with Yale/OTA.
     - **KL-4 (Form C → FRRO e-submission): moved to the external-integration lane** with Yale/OTA (credentialed gov portal filing) — NOT in this pass.
   - **Later:** CRM frills (LTV/anniversary/reviews), Compliance/renewals tracker.
 - **Deferred gates / standing lead-time clocks (OPEN — start now):** **Yale API

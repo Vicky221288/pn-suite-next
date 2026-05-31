@@ -83,7 +83,7 @@ order drew inventory — one kitchen, one inventory, one guest folio.
 
 ---
 
-## KL-3 — Execution-checklist photo-proof stores a reference, not the binary — ✅ CLOSED in the hardening pass (migration written, awaiting apply+verify)
+## KL-3 — Execution-checklist photo-proof stores a reference, not the binary — ✅ CLOSED & verified live (hardening pass, kl3-verify ×2)
 
 **Introduced:** W2 (execution checklists).
 
