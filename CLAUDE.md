@@ -352,7 +352,7 @@ docs/                     # the four sources of truth + pre-flight discipline
     - ✅ **CATERING DOMAIN (W1a–e) COMPLETE & verified live** — enquiry→quote→
       package→BEO→production/KOT→purchasing→consumption→consolidated GST invoice→
       ledger, all on the shared Guest/Event/Inventory/Ledger core.
-  - **W2 — HALL completion: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+  - **W2 — HALL completion: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt (w2-verify ×2, exit 0).
     Hall is NOT greenfield — the spine already does enquiry→quote→booking→event→
     settlement, atomic date-blocking, deposit-as-liability, composite GST. W2
     completes all SIX named gaps (dependency-ordered), reusing proven primitives:
@@ -371,14 +371,14 @@ docs/                     # the four sources of truth + pre-flight discipline
     4. **Execution checklists** — `event_checklists` + `_items` with **photo-proof**
        (requires_photo → completion REJECTED without a photo_ref — the accountability
        moat). *Divergence:* photo_ref stores a path/URL; binary upload to Supabase
-       Storage DEFERRED (no bucket wired yet). RPCs create_event_checklist /
-       complete_checklist_item.
+       Storage DEFERRED (no bucket wired yet — logged **docs/KNOWN-LIMITATIONS.md
+       KL-3**). RPCs create_event_checklist / complete_checklist_item.
     5. **Vendor coordination** — `event_vendors` (**REUSES W1d vendors**); service_type
        + amount + commission_amount + status. RPCs assign_event_vendor / set_event_vendor_status.
     6. **Revenue analytics** — `hall_analytics` READ RPC over `finance_ledger` hall
        stream (realized revenue + pipeline + bookings-by-status + occupancy-by-slot);
        revenue figures **margin-gated** (pnl.view_margin), counts always visible.
-    Migration `20260601210000_w2_hall_completion.sql` WRITTEN, not applied. UI:
+    Migration `20260601210000_w2_hall_completion.sql` APPLIED. UI:
     /hall (analytics + bookings + events), /hall/bookings/[id] (contract + milestones),
     /hall/events/[id] (roster + checklists + vendors). typecheck/lint/build green.
     NONE deferred — all six built (only Storage binary-upload for photos is a later

@@ -51,3 +51,29 @@ Stays-domain concern.
 **Addressed by:** the STAYS core wave (W4–6) — room-stay folio integration, F&B
 menu/pricing, posting F&B consumption to the guest folio at 5% no-ITC (W1e wires
 the GST treatment; Stays wires the folio UX).
+
+---
+
+## KL-3 — Execution-checklist photo-proof stores a reference, not the binary
+
+**Introduced:** W2 (execution checklists).
+
+**What:** `event_checklist_items.photo_ref` holds a path/URL string, and
+`complete_checklist_item` enforces the accountability rule — an item flagged
+`requires_photo` cannot be completed without a non-empty `photo_ref` (proven by
+`scripts/w2-verify.mjs`). But the actual image bytes are NOT uploaded anywhere
+yet: no Supabase Storage bucket is wired, and the UI captures `photo_ref` as a
+typed string (via a prompt), not a file upload.
+
+**Why acceptable now:** the *moat* W2 set out to build is the enforced
+requirement + the audit trail (who completed what, with a photo reference, when)
+— that is live and tested. The binary store is an additive wiring, not a
+correctness gap in the lifecycle.
+
+**The gap:** `photo_ref` can currently point at a path that has no backing
+object. There is no upload, no signed-URL retrieval, no thumbnail.
+
+**Addressed by:** a later Storage pass — create a private `event-photos` bucket
+with org-scoped RLS, swap the checklist UI to a real file upload that writes the
+object and stores its key in `photo_ref`, and serve via signed URLs. Pairs
+naturally with any other Storage need (e.g. signed-contract PDFs).
