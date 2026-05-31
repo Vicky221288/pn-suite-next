@@ -1,6 +1,6 @@
 # PN Suite NXT — Integrated Operating Model (OP MODEL v2)
 ### The governing design for a single hospitality operating system: PN Hall + PN Stays + Catering on one shared spine
-*v2.0-draft · 31 May 2026 · evolves OP MODEL v1.2 from "banquet-hall-with-rooms" → full three-domain hospitality OS · benchmarked against leading 2026 PMS/channel-manager/catering systems*
+*v2.0-locked · 31 May 2026 · evolves OP MODEL v1.2 from "banquet-hall-with-rooms" → full three-domain hospitality OS · benchmarked against leading 2026 PMS/channel-manager/catering systems*
 
 > **How to read this.** v1.2 defined a banquet hall with rooms. This v2 absorbs the real, stated vision: **one integrated hospitality OS** where Hall, Stays, and Catering share data, workflows, resources, inventory, staff, finance, CRM, reporting, and admin — optimized for Indian banquet-halls / wedding venues / resorts / SMB hospitality, run by minimal staff with enterprise controls. Everything in v1.2 (the spine, atomicity, multi-tenancy, messaging, automation, GST) remains true and becomes the **shared core**. This document adds the two new domains (full Stays incl. Yanolja exit; full Catering) and the integration layer that makes them one system, not three apps.
 >
@@ -332,4 +332,4 @@ Each opens on *what to do*, never *what to browse* (the /today thesis, extended 
 
 ---
 
-*Status: OP MODEL v2.0-draft — the integrated three-domain governing design, benchmarked and grounded. On Vicky's review, this becomes v2.0-locked and supersedes v1.2 as the single source of truth. Next build action after lock: the minimal shared core (W0), then Catering (W1-2, the deadline). Nothing committed to repo yet — hand to CC to commit into docs/ + update CLAUDE.md once approved.*
+*Status: OP MODEL v2.0-LOCKED (31 May 2026) — the integrated three-domain governing design, benchmarked and grounded; supersedes v1.2 as the single source of truth. Next build action: the minimal shared core (W0), then Catering (W1-2, the deadline).*
