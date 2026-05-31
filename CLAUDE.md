@@ -235,7 +235,7 @@ docs/                     # the four sources of truth + pre-flight discipline
       rejected, on-hand unchanged), tagged ledger write, and cross-tenant isolation
       (RLS read + RPC self-auth) on all four entities.
     - Next: **W1 Catering** (sub-phased; see below).
-  - **W1 — CATERING (the ~2-week clock = the new manager's domain): COMPLETE ✅ (W1a–e all live; W1e awaiting apply+verify).**
+  - **W1 — CATERING (the ~2-week clock = the new manager's domain): COMPLETE ✅ — all of W1a–e verified live on kvyhyeqwyafpizecfbnt.**
     Port the legacy Kitchen donor + benchmark structure; **port-and-extend, NOT
     greenfield.** Sub-phase plan:
     - **W1a — menu/recipe/cost foundation: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt.
@@ -321,7 +321,7 @@ docs/                     # the four sources of truth + pre-flight discipline
         rejected; close decrements; **2nd close rejected — no double-deduct**;
         over-draw rejected (ghee unchanged); room-dining draws same ledger; variance
         +cost shown to Owner / nulled for operative; org isolation; audited.
-    - **W1e — consolidated multi-rate GST invoice: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+    - **W1e — consolidated multi-rate GST invoice: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt (w1e-verify ×2, exit 0).
       The catering loop closer — most accounting-sensitive phase. ONE invoice over
       the shared Event spanning up to 3 supply-types. **Config-driven GST engine
       `resolve_gst(org, supply_type)`** is the ONLY place rates live — resolved
@@ -340,8 +340,8 @@ docs/                     # the four sources of truth + pre-flight discipline
       hall→hall/rooms_fnb→stays/catering→catering; **deposit = escrowed liability
       §12#6 — discharged in deposit_ledger, NOT a finance_ledger revenue line, NOT
       taxed; FORFEIT ⇒ taxable income credit**; Owner/PM-gated; idempotent).
-      Migration `20260601190000_w1e_consolidated_gst_invoice.sql` WRITTEN, not
-      applied. UI: /catering/invoice (+/[id]) generate / per-line + tax summary +
+      Migration `20260601190000_w1e_consolidated_gst_invoice.sql` APPLIED.
+      UI: /catering/invoice (+/[id]) generate / per-line + tax summary +
       deposit + due / settle. typecheck/lint/build green.
       - Harness `scripts/w1e-verify.mjs` (run ×2): 3 rates resolved from supply_type
         (flag flip changes rooms/F&B 5→18 — proves not hardcoded); catering on
@@ -349,7 +349,7 @@ docs/                     # the four sources of truth + pre-flight discipline
         not taxed, amount_due correct; settle posts revenue per stream + deposit to
         deposit_ledger; forfeit → taxable income; per-org seq; Owner/PM gate; org
         isolation; audited.
-    - ✅ **CATERING DOMAIN (W1a–e) COMPLETE** once W1e verifies — enquiry→quote→
+    - ✅ **CATERING DOMAIN (W1a–e) COMPLETE & verified live** — enquiry→quote→
       package→BEO→production/KOT→purchasing→consumption→consolidated GST invoice→
       ledger, all on the shared Guest/Event/Inventory/Ledger core.
   - **W2–4 — HALL completion** (contracts/e-sign, payment milestones, resource
