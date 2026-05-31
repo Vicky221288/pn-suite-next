@@ -1,20 +1,25 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { getRoleContext } from '@/lib/auth/context';
 import { formatINR } from '@/lib/utils';
 import { PoActions } from '@/components/po-actions';
 
-interface PoLine { id: string; name: string; quantity: number; unit: string | null; unit_cost: number }
+interface PoLine { id: string; name: string; quantity: number; unit: string | null }
 interface Po { id: string; status: string; created_at: string; vendors: { name: string } | null; purchase_order_lines: PoLine[] }
 
 /** Catering — Purchase Orders. draft → ordered → received (receive = stock IN). */
 export default async function PurchaseOrdersPage() {
   const supabase = await createClient();
+  const ctx = await getRoleContext();
+  // unit_cost is NOT read directly (KL-1: locked column) — fetched via the capability-gated po_line_costs RPC
   const { data } = await supabase
     .from('purchase_orders')
-    .select('id, status, created_at, vendors(name), purchase_order_lines(id, name, quantity, unit, unit_cost)')
+    .select('id, status, created_at, vendors(name), purchase_order_lines(id, name, quantity, unit)')
     .order('created_at', { ascending: false })
     .limit(100);
   const pos = (data ?? []) as unknown as Po[];
+  const { data: costData } = await supabase.rpc('po_line_costs', { p_org: ctx?.orgId });
+  const costs = new Map<string, number>(((costData?.costs ?? []) as { line_id: string; unit_cost: number }[]).map((c) => [c.line_id, c.unit_cost]));
 
   return (
     <div className="flex flex-col gap-5">
@@ -33,7 +38,7 @@ export default async function PurchaseOrdersPage() {
                 {po.purchase_order_lines.map((l) => (
                   <li key={l.id} className="flex justify-between py-0.5">
                     <span>{l.name}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)' }}>{l.quantity} {l.unit} · {formatINR(l.unit_cost)}/{l.unit}</span>
+                    <span style={{ fontFamily: 'var(--font-mono)' }}>{l.quantity} {l.unit}{costs.has(l.id) ? ` · ${formatINR(costs.get(l.id)!)}/${l.unit}` : ''}</span>
                   </li>
                 ))}
               </ul>

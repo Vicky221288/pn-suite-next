@@ -12,10 +12,11 @@ export default async function MenuItemDetailPage({ params }: { params: Promise<{
   if (!item) notFound();
 
   const { data: recipe } = await supabase.from('catering_recipes').select('id, base_yield, scale_mode, notes').eq('menu_item_id', id).maybeSingle();
+  // cost is NOT read here (KL-1: locked column) — the gated scale preview below shows cost to privileged roles
   const { data: lines } = recipe
     ? await supabase
         .from('catering_recipe_lines')
-        .select('quantity, unit, inventory_item_id, inventory_items(name, cost)')
+        .select('quantity, unit, inventory_item_id, inventory_items(name)')
         .eq('recipe_id', recipe.id)
     : { data: [] as never[] };
 
@@ -34,11 +35,11 @@ export default async function MenuItemDetailPage({ params }: { params: Promise<{
         ) : (
           <ul className="flex flex-col text-sm" style={{ color: 'var(--color-text-secondary)' }}>
             {(lines ?? []).map((l, i) => {
-              const inv = l.inventory_items as unknown as { name: string; cost: number } | null;
+              const inv = l.inventory_items as unknown as { name: string } | null;
               return (
                 <li key={i} className="flex justify-between py-1" style={{ borderBottom: '1px solid var(--color-divider)' }}>
                   <span>{inv?.name ?? l.inventory_item_id}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)' }}>{l.quantity} {l.unit} · {formatINR(inv?.cost ?? 0)}/unit</span>
+                  <span style={{ fontFamily: 'var(--font-mono)' }}>{l.quantity} {l.unit}</span>
                 </li>
               );
             })}

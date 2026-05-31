@@ -5,7 +5,7 @@ Each entry: what it is, why it's acceptable now, and when it gets addressed.
 
 ---
 
-## KL-1 — Inventory cost column is member-readable (cost-visibility hardening deferred)
+## KL-1 — Inventory cost column member-readable — ✅ CLOSED in the hardening pass (migration written, awaiting apply+verify)
 
 **Introduced:** W0 (`inventory_items.cost`), surfaced again in W1b.
 
@@ -29,6 +29,27 @@ part of any catering sub-phase (W1a–W1e).
 **Addressed by:** a future security pass (post-Wave-C), e.g. a `cost`-bearing
 view + capability-gated column security, or moving cost to a side table with its
 own default-deny policy.
+
+**✅ CLOSED — `20260602070000_kl1_cost_visibility_lockdown.sql`** (column-revoke +
+gated-RPC approach, approved). Three vectors closed so an operational role cannot
+read raw cost by ANY path:
+1. **Direct table reads** — `SELECT` on `inventory_items.cost` AND
+   `purchase_order_lines.unit_cost` revoked from `authenticated`/`anon` (every
+   other column re-granted). Supabase maps all logged-in users to one
+   `authenticated` Postgres role, so column GRANTs are all-or-nothing → raw cost
+   is unreadable directly by anyone; capability gating stays in the RPC layer.
+2. **`scale_recipe`** — *found during the build* to be a SECURITY DEFINER RPC that
+   returned `per_plate_cost`/`total_food_cost`/`line_cost` UNCONDITIONALLY (the
+   menu scale-preview showed it to every member). Now capability-gated (cost null
+   for non-privileged; scaled quantities always — production/quote internals
+   unaffected; `service_role`/system path unchanged so existing harnesses pass).
+3. **PO unit costs** — new `po_line_costs(p_org)` gated accessor so Owner/PM still
+   see PO unit costs; ops get none.
+`service_role` + SECURITY DEFINER functions (run as owner) bypass the revoke, so
+the scale engine + system paths keep reading cost. The two leaky UIs
+(`catering/menu/[id]`, `catering/purchase-orders`) were rewritten to the gated
+paths. Proven by `scripts/kl1-verify.mjs` (×2): operative blocked on every path;
+Owner/PM + engine reads intact.
 
 ---
 

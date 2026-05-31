@@ -484,6 +484,32 @@ docs/                     # the four sources of truth + pre-flight discipline
   - **W8+ — Yanolja cutover** = its own slow sub-project: **parallel-run → switch
     ONE OTA at a time → gradual; NEVER a hard flip** (a dropped reservation is a
     real guest at the door — highest-risk operation in the program).
+  - **Internal hardening pass (KL-1 + KL-3; KL-4 moved to the external lane).** Two sub-phases.
+    - **KL-1 — cost-column visibility lockdown: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+      Approach (approved): **column-revoke + gated RPC**, INCLUDING `purchase_order_lines.unit_cost`.
+      The one security-sensitive schema change. Closes 3 cost-leak vectors so an
+      operational role cannot read raw cost by ANY path: (1) `SELECT` on
+      `inventory_items.cost` + `purchase_order_lines.unit_cost` revoked from
+      authenticated/anon (other cols re-granted; one `authenticated` role → column
+      GRANTs all-or-nothing → cap gating stays in RPCs); (2) **`scale_recipe`
+      found leaking cost unconditionally** (menu scale-preview showed it to all
+      members) — now capability-gated (cost null for non-priv; quantities always;
+      service_role/system path unchanged so W1a/W1b/W1d harnesses still pass);
+      (3) new `po_line_costs` gated accessor. SECURITY DEFINER fns + service_role
+      bypass the revoke → scale engine intact. Leaky UIs (catering/menu/[id],
+      catering/purchase-orders) rewritten to gated paths. Migration
+      `20260602070000_kl1_cost_visibility_lockdown.sql` WRITTEN, not applied.
+      typecheck/lint/build green. **docs/KNOWN-LIMITATIONS.md KL-1 → CLOSED.**
+      - Harness `scripts/kl1-verify.mjs` (run ×2): operative blocked on direct
+        select / embed / unit_cost / scale_recipe (all paths); safe columns still
+        read; Owner/PM + service_role engine cost reads intact; quote_summary still
+        gated; org isolation.
+    - **KL-3 — Storage for photo-proof: NEXT (scoped, approved structure).** Private
+      `proof-photos` bucket + org-scoped storage.objects RLS (migration: bucket +
+      policies; user applies); upload widget + signed-URL retrieval wired into the
+      W2 checklist + S3 housekeeping `photo_ref` flows. The photo-proof gate is
+      unchanged (ref now a real object key).
+    - **KL-4 (Form C → FRRO e-submission): moved to the external-integration lane** with Yale/OTA (credentialed gov portal filing) — NOT in this pass.
   - **Later:** CRM frills (LTV/anniversary/reviews), Compliance/renewals tracker.
 - **Deferred gates / standing lead-time clocks (OPEN — start now):** **Yale API
   access** scoping · **Yanolja export** scoping (CSV/API for reservations/guests/

@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { previewScale } from '@/lib/actions/catering';
 import { formatINR } from '@/lib/utils';
 
-interface ScaleLine { inventory_item_id: string; name: string; unit: string; scaled_quantity: number; line_cost: number }
-interface ScaleResult { has_recipe: boolean; batches: number | null; per_plate_cost: number; total_food_cost: number; lines: ScaleLine[] }
+interface ScaleLine { inventory_item_id: string; name: string; unit: string; scaled_quantity: number; line_cost: number | null }
+interface ScaleResult { has_recipe: boolean; batches: number | null; can_see_cost: boolean; per_plate_cost: number | null; total_food_cost: number | null; lines: ScaleLine[] }
 
 /** Enter a guest count → scaled ingredient list + total food cost (the defining feature). */
 export function MenuScalePreview({ menuItemId }: { menuItemId: string }) {
@@ -33,15 +33,19 @@ export function MenuScalePreview({ menuItemId }: { menuItemId: string }) {
       {res && res.has_recipe && (
         <div className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
           <div className="mb-2 flex flex-wrap gap-4">
-            <span>Per-plate food cost: <b>{formatINR(res.per_plate_cost)}</b></span>
-            <span>Total at {count}: <b>{formatINR(res.total_food_cost)}</b></span>
+            {res.can_see_cost ? (
+              <>
+                <span>Per-plate food cost: <b>{formatINR(res.per_plate_cost ?? 0)}</b></span>
+                <span>Total at {count}: <b>{formatINR(res.total_food_cost ?? 0)}</b></span>
+              </>
+            ) : <span style={{ color: 'var(--color-text-tertiary)' }}>Food cost hidden for your role</span>}
             {res.batches != null && <span>Batches: <b>{res.batches}</b></span>}
           </div>
           <ul className="flex flex-col">
             {res.lines.map((l) => (
               <li key={l.inventory_item_id} className="flex justify-between py-1" style={{ borderBottom: '1px solid var(--color-divider)' }}>
                 <span>{l.name}</span>
-                <span style={{ fontFamily: 'var(--font-mono)' }}>{l.scaled_quantity} {l.unit} · {formatINR(l.line_cost)}</span>
+                <span style={{ fontFamily: 'var(--font-mono)' }}>{l.scaled_quantity} {l.unit}{l.line_cost != null ? ` · ${formatINR(l.line_cost)}` : ''}</span>
               </li>
             ))}
           </ul>
