@@ -28,3 +28,6 @@ next-env.d.ts
 # supabase local
 /supabase/.temp
 /supabase/.branches
+
+# local reference material (not versioned)
+/pilot/
