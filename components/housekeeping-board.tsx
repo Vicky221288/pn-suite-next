@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { PhotoUpload } from '@/components/photo-upload';
 import {
   setHousekeepingStatus, assignHousekeepingTask, completeHousekeepingTask,
   createMaintenanceRequest, setMaintenanceStatus, setRoomOutOfOrder, restoreRoom,
@@ -17,7 +18,7 @@ const h2 = { color: 'var(--color-text-secondary)', fontWeight: 600, fontSize: 'v
 const i: React.CSSProperties = { background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 'var(--input-radius)', color: 'var(--input-text)', padding: '6px 10px', fontSize: 'var(--text-sm)' };
 const hkColour = (s: string) => ({ clean: 'var(--color-success)', inspected: 'var(--color-success)', dirty: 'var(--color-danger)', out_of_order: 'var(--color-text-tertiary)' }[s] ?? 'var(--color-text)');
 
-export function HousekeepingBoard({ board, tasks, maint, staff }: { board: BoardRoom[]; tasks: Task[]; maint: Maint[]; staff: Staff[] }) {
+export function HousekeepingBoard({ board, tasks, maint, staff, orgId }: { board: BoardRoom[]; tasks: Task[]; maint: Maint[]; staff: Staff[]; orgId: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -30,11 +31,6 @@ export function HousekeepingBoard({ board, tasks, maint, staff }: { board: Board
     setBusy(true); setMsg(null);
     const res = await fn(); setBusy(false);
     if (res.ok) { reset?.(); router.refresh(); } else setMsg(`${res.error}: ${res.message}`);
-  }
-  async function completeTurn(t: Task) {
-    let ref: string | undefined;
-    if (t.requires_photo) { ref = typeof window !== 'undefined' ? (window.prompt('Photo reference — required for this turn:') ?? undefined) : undefined; if (!ref) { setMsg('Photo-proof required.'); return; } }
-    run(() => completeHousekeepingTask({ taskId: t.id, photoRef: ref, result: 'inspected' }));
   }
 
   return (
@@ -75,7 +71,9 @@ export function HousekeepingBoard({ board, tasks, maint, staff }: { board: Board
                     <option value="">assign…</option>{staff.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                   {assignTo[t.id] && <Button onClick={() => run(() => assignHousekeepingTask({ taskId: t.id, staffId: assignTo[t.id]! }))} disabled={busy}>Assign</Button>}
-                  <Button onClick={() => completeTurn(t)} disabled={busy}>Complete</Button>
+                  {t.requires_photo
+                    ? <PhotoUpload orgId={orgId} prefix={`housekeeping/${t.id}`} label="Photo & complete" onUploaded={(path) => run(() => completeHousekeepingTask({ taskId: t.id, photoRef: path, result: 'inspected' }))} disabled={busy} />
+                    : <Button onClick={() => run(() => completeHousekeepingTask({ taskId: t.id, result: 'inspected' }))} disabled={busy}>Complete</Button>}
                 </span>
               </li>
             ))}

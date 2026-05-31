@@ -83,7 +83,7 @@ order drew inventory — one kitchen, one inventory, one guest folio.
 
 ---
 
-## KL-3 — Execution-checklist photo-proof stores a reference, not the binary
+## KL-3 — Execution-checklist photo-proof stores a reference, not the binary — ✅ CLOSED in the hardening pass (migration written, awaiting apply+verify)
 
 **Introduced:** W2 (execution checklists).
 
@@ -106,6 +106,20 @@ object. There is no upload, no signed-URL retrieval, no thumbnail.
 with org-scoped RLS, swap the checklist UI to a real file upload that writes the
 object and stores its key in `photo_ref`, and serve via signed URLs. Pairs
 naturally with any other Storage need (e.g. signed-contract PDFs).
+
+**✅ CLOSED — `20260602090000_kl3_storage_proof_photos.sql`.** A PRIVATE
+`proof-photos` bucket (image-only, 10 MB) + org-scoped RLS on `storage.objects`
+(path `{org_id}/{entity}/{id}/{file}`; policies gate on
+`is_org_member((storage.foldername(name))[1]::uuid)` — same tenant isolation as
+every entity). `components/photo-upload.tsx` uploads browser→Storage (RLS-gated)
+and returns the object path, stored as `photo_ref` via the EXISTING W2
+`complete_checklist_item` + S3 `complete_housekeeping_task` RPCs (covers BOTH
+`event_checklist_items.photo_ref` and `housekeeping_tasks.photo_ref`). Retrieval
+is via short-lived (60 s) signed URLs (`lib/actions/storage.ts` → `getProofPhotoUrl`;
+bucket private, never public). The photo-proof gate is UNCHANGED — completion
+still rejects an empty ref; the ref is now a real object key. Proven by
+`scripts/kl3-verify.mjs` (×2): upload→signed-URL retrieval; private bucket; org-A
+cannot touch org-B photos (RLS); both gates still enforce.
 
 ---
 

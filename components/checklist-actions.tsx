@@ -2,13 +2,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { PhotoUpload } from '@/components/photo-upload';
+import { ViewPhotoLink } from '@/components/view-photo-link';
 import { createEventChecklist, completeChecklistItem } from '@/lib/actions/hall';
 
 interface Item { id: string; label: string; requires_photo: boolean; done: boolean; photo_ref: string | null }
 interface Checklist { id: string; title: string; event_checklist_items: Item[] }
 
-/** Create checklists + complete items (photo-required items demand a photo_ref). */
-export function ChecklistPanel({ eventId, checklists }: { eventId: string; checklists: Checklist[] }) {
+/** Create checklists + complete items (photo-required items demand a real uploaded photo_ref). */
+export function ChecklistPanel({ eventId, orgId, checklists }: { eventId: string; orgId: string; checklists: Checklist[] }) {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [itemsText, setItemsText] = useState('');
@@ -26,11 +28,6 @@ export function ChecklistPanel({ eventId, checklists }: { eventId: string; check
     if (!title || items.length === 0) { setMsg('Title + at least one item required.'); return; }
     run(() => createEventChecklist({ eventId, title, items })).then(() => { setTitle(''); setItemsText(''); });
   }
-  async function complete(it: Item) {
-    let ref: string | undefined;
-    if (it.requires_photo) { ref = typeof window !== 'undefined' ? (window.prompt('Photo reference (path/URL) — required for this item:') ?? undefined) : undefined; if (!ref) { setMsg('Photo-proof required.'); return; } }
-    run(() => completeChecklistItem({ itemId: it.id, photoRef: ref }));
-  }
   const i: React.CSSProperties = { background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 'var(--input-radius)', color: 'var(--input-text)', padding: '6px 10px', fontSize: 'var(--text-sm)' };
   return (
     <div className="flex flex-col gap-3">
@@ -40,8 +37,10 @@ export function ChecklistPanel({ eventId, checklists }: { eventId: string; check
           <ul className="flex flex-col">
             {c.event_checklist_items.sort((a, b) => a.label.localeCompare(b.label)).map((it) => (
               <li key={it.id} className="flex items-center justify-between gap-3 py-1 text-sm" style={{ color: 'var(--color-text)' }}>
-                <span>{it.done ? '✓' : '○'} {it.label} {it.requires_photo && <span title="photo required" style={{ color: 'var(--color-brand)' }}>📷</span>}{it.photo_ref ? <span style={{ color: 'var(--color-text-tertiary)' }}> · {it.photo_ref}</span> : null}</span>
-                {!it.done && <Button onClick={() => complete(it)} disabled={busy}>Complete</Button>}
+                <span>{it.done ? '✓' : '○'} {it.label} {it.requires_photo && <span title="photo required" style={{ color: 'var(--color-brand)' }}>📷</span>}{it.done && it.photo_ref ? <> · <ViewPhotoLink path={it.photo_ref} /></> : null}</span>
+                {!it.done && (it.requires_photo
+                  ? <PhotoUpload orgId={orgId} prefix={`checklist/${it.id}`} onUploaded={(path) => run(() => completeChecklistItem({ itemId: it.id, photoRef: path }))} disabled={busy} />
+                  : <Button onClick={() => run(() => completeChecklistItem({ itemId: it.id }))} disabled={busy}>Complete</Button>)}
               </li>
             ))}
           </ul>

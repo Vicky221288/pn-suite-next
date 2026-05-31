@@ -504,11 +504,28 @@ docs/                     # the four sources of truth + pre-flight discipline
         select / embed / unit_cost / scale_recipe (all paths); safe columns still
         read; Owner/PM + service_role engine cost reads intact; quote_summary still
         gated; org isolation.
-    - **KL-3 — Storage for photo-proof: NEXT (scoped, approved structure).** Private
-      `proof-photos` bucket + org-scoped storage.objects RLS (migration: bucket +
-      policies; user applies); upload widget + signed-URL retrieval wired into the
-      W2 checklist + S3 housekeeping `photo_ref` flows. The photo-proof gate is
-      unchanged (ref now a real object key).
+    - **KL-3 — Storage for photo-proof: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+      PRIVATE `proof-photos` bucket (migration: `insert into storage.buckets`
+      public=false, image-only, 10 MB cap) + org-scoped RLS on `storage.objects`
+      (path `{org_id}/{entity}/{id}/{file}`; policies gate on
+      `is_org_member((storage.foldername(name))[1]::uuid)` — same tenant isolation
+      as every entity). Photos served via **short-lived signed URLs** (60 s,
+      `lib/actions/storage.ts` `getProofPhotoUrl`; bucket private, never public
+      links). `components/photo-upload.tsx` uploads browser→Storage (RLS-gated) and
+      returns the object path, passed as `photo_ref` into the EXISTING W2
+      `complete_checklist_item` + S3 `complete_housekeeping_task` RPCs (the photo
+      metadata write still goes through the action layer; only the binary goes
+      direct-to-Storage under RLS). `components/view-photo-link.tsx` opens via
+      signed URL. Wired into `checklist-actions` (W2) + `housekeeping-board` (S3),
+      replacing the old `window.prompt` ref. **The photo-proof gate is UNCHANGED** —
+      completion still rejects an empty `photo_ref`; the ref is now a real object
+      key. Migration `20260602090000_kl3_storage_proof_photos.sql` WRITTEN, not
+      applied. typecheck/lint/build green. **docs/KNOWN-LIMITATIONS.md KL-3 → CLOSED.**
+      - Harness `scripts/kl3-verify.mjs` (run ×2): upload→path→signed-URL retrieval;
+        bucket private (public URL fails); org-A member cannot sign/download/upload
+        org-B photos (RLS isolation); W2 + S3 gates still reject no-ref and accept a
+        real uploaded path; self-cleaning (removes objects + orgs).
+    - **🔒 HARDENING PASS (KL-1 + KL-3) COMPLETE** (KL-1 verified live; KL-3 awaiting apply+verify).
     - **KL-4 (Form C → FRRO e-submission): moved to the external-integration lane** with Yale/OTA (credentialed gov portal filing) — NOT in this pass.
   - **Later:** CRM frills (LTV/anniversary/reviews), Compliance/renewals tracker.
 - **Deferred gates / standing lead-time clocks (OPEN — start now):** **Yale API

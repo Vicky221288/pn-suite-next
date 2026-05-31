@@ -24,6 +24,7 @@ export default async function HousekeepingPage() {
         tasks={(tasks ?? []) as never}
         maint={(maint ?? []) as never}
         staff={staff ?? []}
+        orgId={ctx?.orgId ?? ''}
       />
     </div>
   );

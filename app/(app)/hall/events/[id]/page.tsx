@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getRoleContext } from '@/lib/auth/context';
 import { RosterPanel } from '@/components/roster-actions';
 import { ChecklistPanel } from '@/components/checklist-actions';
 import { VendorPanel } from '@/components/vendor-actions';
@@ -9,6 +10,7 @@ import { VendorPanel } from '@/components/vendor-actions';
 export default async function HallEventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
+  const ctx = await getRoleContext();
   const { data: event } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
   if (!event) notFound();
   const { data: roster } = await supabase.from('event_staff').select('id, role_on_event, status, staff(name)').eq('event_id', id);
@@ -24,7 +26,7 @@ export default async function HallEventPage({ params }: { params: Promise<{ id: 
       <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{event.slot ?? '—'} · {event.status}</p>
 
       <section style={card}><h2 style={h2}>Staff roster</h2><RosterPanel eventId={id} roster={(roster ?? []) as never} staff={staff ?? []} /></section>
-      <section style={card}><h2 style={h2}>Execution checklists (photo-proof)</h2><ChecklistPanel eventId={id} checklists={(checklists ?? []) as never} /></section>
+      <section style={card}><h2 style={h2}>Execution checklists (photo-proof)</h2><ChecklistPanel eventId={id} orgId={ctx?.orgId ?? ''} checklists={(checklists ?? []) as never} /></section>
       <section style={card}><h2 style={h2}>Vendors</h2><VendorPanel eventId={id} linked={(vendorsLinked ?? []) as never} vendors={vendors ?? []} /></section>
     </div>
   );
