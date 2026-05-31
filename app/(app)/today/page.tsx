@@ -58,9 +58,12 @@ export default async function TodayPage() {
       )}
 
       <Card title="Spine">
-        <Link href="/enquiries" className="text-sm" style={{ color: 'var(--color-brand)' }}>
-          Enquiries → quote → booking → event → settlement →
-        </Link>
+        <div className="flex flex-col gap-1 text-sm">
+          <Link href="/enquiries" style={{ color: 'var(--color-brand)' }}>
+            Enquiries → quote → booking → event → settlement →
+          </Link>
+          <Link href="/guests" style={{ color: 'var(--color-brand)' }}>Guests (shared-core identity) →</Link>
+        </div>
         <p className="mt-2 text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
           Signed in as <span style={{ fontFamily: 'var(--font-mono)' }}>{ctx?.email}</span>
           {ctx?.role ? ` · ${ctx.role}` : ''}

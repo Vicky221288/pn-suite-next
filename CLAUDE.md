@@ -218,8 +218,21 @@ docs/                     # the four sources of truth + pre-flight discipline
     many streams (P&L is a query, not a reconciliation); 11) domains are views +
     rules over the shared core, **never separate databases/silos**.
 - **▶ WAVE C — module build, sequence LOCKED (v2 Part 4):**
-  - **W0 — minimal shared core:** Guest + Inventory + Staff + Finance-ledger (the
-    deps Catering needs; small, on the proven spine). **← NEXT BUILD.**
+  - **W0 — minimal shared core: code COMPLETE, READY FOR SQL.** Four shared-core
+    entities on the proven pattern (atomic RPC + org-scoped default-deny RLS +
+    audit + auth.uid() self-auth): **guests** (dedup by phone+name; family on one
+    phone stays distinct; `find_or_create_guest` + atomic audited `merge_guests`),
+    **inventory_items + inventory_movements** (atomic `record_stock_movement`,
+    in/out/adjust, no-negative guard; cost gross of input GST), **staff** (profile;
+    user_id→auth.users, capabilities stay in org_members — no identity dup),
+    **finance_ledger** (`write_ledger`, supply-type + source-domain tags —
+    invariant #10). Migration `20260531233000_w0_shared_core.sql` WRITTEN, not
+    applied. Minimal Guest UI (`/guests` + `/guests/[id]`, search/create/merge).
+    typecheck/lint/build green.
+    - ⏳ Vicky applies W0 migration; then `node scripts/w0-verify.mjs` (×2) proves
+      find-or-create idempotency, family-distinctness, atomic+audited merge, atomic
+      stock movement, tagged ledger write, and cross-tenant isolation on all four.
+    - Next after W0 verifies: **W1–2 Catering** (port legacy Kitchen donor + benchmark).
   - **W1–2 — CATERING (the ~2-week clock = the new manager's domain):** **port the
     legacy Kitchen donor + benchmark structure** (menu/recipe-auto-scale/ingredient
     costing/packages/BEO/KOT/purchase planning/consumption; banquet + Stays-F&B
