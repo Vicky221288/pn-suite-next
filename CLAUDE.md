@@ -269,7 +269,7 @@ docs/                     # the four sources of truth + pre-flight discipline
         margin 78300), cost-drift moves margin (→73500) but NOT selling, package
         pre-fill, margin gate (Owner+Catering-Lead see, operative doesn't), org
         isolation, audited writes.
-    - **W1c — BEO (Banquet Event Order): COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+    - **W1c — BEO (Banquet Event Order): COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt (w1c-verify ×2, exit 0).
       BEO attaches to the **shared `events` spine** — one wedding = one Event (no
       parallel catering-only event object). `events` ALTERed: `booking_id`/`slot`
       → nullable, ADD `guest_id` + `event_type`, so a standalone catering job lives
@@ -282,7 +282,7 @@ docs/                     # the four sources of truth + pre-flight discipline
       (versioned; multiple BEOs per event), `update_beo` (**rejected once signed —
       immutable**), `send_beo`, `sign_beo` (terminal + records signature). All
       atomic + audited + tenant-scoped. Migration
-      `20260601150000_w1c_catering_beo.sql` WRITTEN, not applied. UI:
+      `20260601150000_w1c_catering_beo.sql` APPLIED. UI:
       /catering/beo (generate from accepted quote) + /catering/beo/[id] (view, mark
       sent, capture signature); Accept-quote button on /catering/quotes/[id].
       Cost-visibility carve-out logged in **`docs/KNOWN-LIMITATIONS.md` (KL-1)** —
