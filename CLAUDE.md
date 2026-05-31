@@ -485,7 +485,7 @@ docs/                     # the four sources of truth + pre-flight discipline
     ONE OTA at a time → gradual; NEVER a hard flip** (a dropped reservation is a
     real guest at the door — highest-risk operation in the program).
   - **Internal hardening pass (KL-1 + KL-3; KL-4 moved to the external lane).** Two sub-phases.
-    - **KL-1 — cost-column visibility lockdown: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+    - **KL-1 — cost-column visibility lockdown: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt (kl1-verify ×2, exit 0).
       Approach (approved): **column-revoke + gated RPC**, INCLUDING `purchase_order_lines.unit_cost`.
       The one security-sensitive schema change. Closes 3 cost-leak vectors so an
       operational role cannot read raw cost by ANY path: (1) `SELECT` on
@@ -498,7 +498,7 @@ docs/                     # the four sources of truth + pre-flight discipline
       (3) new `po_line_costs` gated accessor. SECURITY DEFINER fns + service_role
       bypass the revoke → scale engine intact. Leaky UIs (catering/menu/[id],
       catering/purchase-orders) rewritten to gated paths. Migration
-      `20260602070000_kl1_cost_visibility_lockdown.sql` WRITTEN, not applied.
+      `20260602070000_kl1_cost_visibility_lockdown.sql` APPLIED.
       typecheck/lint/build green. **docs/KNOWN-LIMITATIONS.md KL-1 → CLOSED.**
       - Harness `scripts/kl1-verify.mjs` (run ×2): operative blocked on direct
         select / embed / unit_cost / scale_recipe (all paths); safe columns still

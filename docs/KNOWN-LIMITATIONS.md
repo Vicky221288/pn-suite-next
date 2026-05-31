@@ -5,7 +5,7 @@ Each entry: what it is, why it's acceptable now, and when it gets addressed.
 
 ---
 
-## KL-1 — Inventory cost column member-readable — ✅ CLOSED in the hardening pass (migration written, awaiting apply+verify)
+## KL-1 — Inventory cost column member-readable — ✅ CLOSED & verified live (hardening pass, kl1-verify ×2)
 
 **Introduced:** W0 (`inventory_items.cost`), surfaced again in W1b.
 
