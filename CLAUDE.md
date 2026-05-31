@@ -218,7 +218,7 @@ docs/                     # the four sources of truth + pre-flight discipline
     many streams (P&L is a query, not a reconciliation); 11) domains are views +
     rules over the shared core, **never separate databases/silos**.
 - **▶ WAVE C — module build, sequence LOCKED (v2 Part 4):**
-  - **W0 — minimal shared core: code COMPLETE, READY FOR SQL.** Four shared-core
+  - **W0 — minimal shared core: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt. Four shared-core
     entities on the proven pattern (atomic RPC + org-scoped default-deny RLS +
     audit + auth.uid() self-auth): **guests** (dedup by phone+name; family on one
     phone stays distinct; `find_or_create_guest` + atomic audited `merge_guests`),
@@ -229,10 +229,13 @@ docs/                     # the four sources of truth + pre-flight discipline
     invariant #10). Migration `20260531233000_w0_shared_core.sql` WRITTEN, not
     applied. Minimal Guest UI (`/guests` + `/guests/[id]`, search/create/merge).
     typecheck/lint/build green.
-    - ⏳ Vicky applies W0 migration; then `node scripts/w0-verify.mjs` (×2) proves
-      find-or-create idempotency, family-distinctness, atomic+audited merge, atomic
-      stock movement, tagged ledger write, and cross-tenant isolation on all four.
-    - Next after W0 verifies: **W1–2 Catering** (port legacy Kitchen donor + benchmark).
+    - ✅ `scripts/w0-verify.mjs` passes twice identical (exit 0, self-cleaning):
+      find-or-create idempotency, family-distinctness (2 names/1 phone), atomic+
+      audited merge (merged rows re-creatable), atomic stock movement (over-draw
+      rejected, on-hand unchanged), tagged ledger write, and cross-tenant isolation
+      (RLS read + RPC self-auth) on all four entities.
+    - Next: **W1–2 Catering** (port legacy Kitchen donor + benchmark structure
+      onto this shared core) — the ~2-week clock.
   - **W1–2 — CATERING (the ~2-week clock = the new manager's domain):** **port the
     legacy Kitchen donor + benchmark structure** (menu/recipe-auto-scale/ingredient
     costing/packages/BEO/KOT/purchase planning/consumption; banquet + Stays-F&B
