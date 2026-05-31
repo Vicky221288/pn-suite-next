@@ -252,7 +252,7 @@ docs/                     # the four sources of truth + pre-flight discipline
         linear ×500 exact, batch round-UP (230/50→5), no-recipe→empty, per-plate
         cost = Σ line costs (₹84) + total at N (₹42k), live inventory-cost
         flow-through (320→400 ⇒ ₹100/₹50k), org isolation, audited writes.
-    - **W1b — enquiry → quote → package: code COMPLETE, READY FOR SQL.**
+    - **W1b — enquiry → quote → package: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt.
       `catering_enquiries` (create-or-LINKS a Guest via W0 find_or_create_guest —
       no dup), `catering_packages` + `_items` (reusable menu+price templates),
       `catering_quotes` + `_lines` (selling stored point-in-time). RPCs:
@@ -264,9 +264,11 @@ docs/                     # the four sources of truth + pre-flight discipline
       `20260601120000_w1b_catering_enquiry_quote.sql` WRITTEN, not applied. UI:
       /catering/enquiries(+[id] quote builder) /catering/quotes/[id] /catering/packages.
       typecheck/lint/build green.
-      - ⏳ Vicky applies → `node scripts/w1b-verify.mjs` (×2): Guest reuse, quote
-        compute, live-cost margin drift vs fixed selling, package pre-fill, margin
-        gate (owner/lead yes, operative no), org isolation, audited writes.
+      - ✅ `scripts/w1b-verify.mjs` passes twice identical (exit 0, self-cleaning):
+        Guest create-then-LINK (no dup), quote compute (sell 99000 / cost 20700 /
+        margin 78300), cost-drift moves margin (→73500) but NOT selling, package
+        pre-fill, margin gate (Owner+Catering-Lead see, operative doesn't), org
+        isolation, audited writes.
     - **W1c** — BEO (function sheet) + guest-guarantee, shared with the Hall event.
     - **W1d** — kitchen production / KOT + purchase planning (PO from booked recipes) + consumption draw-down (W0 inventory).
     - **W1e** — catering billing line on the consolidated GST invoice (composite-led) + per-event profitability.
