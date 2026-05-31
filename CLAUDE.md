@@ -164,7 +164,7 @@ docs/                     # the four sources of truth + pre-flight discipline
     is structurally addressed.
   - Next: **B5 — the vertical slice** (Enquiry → Booking → Event → Settlement
     end-to-end; the foundation-wave go/no-go gate).
-- **Phase B5 (vertical slice — GO/NO-GO GATE): code COMPLETE, READY FOR SQL.**
+- **Phase B5 (vertical slice — GO/NO-GO GATE): COMPLETE ✅ — verified live. 🎉 FOUNDATION WAVE DONE.**
   Composes B1–B4 into ONE thread: Enquiry → Quote → Booking → Event → Settlement.
   Spine tables `quotes`/`events`/`invoices` (+ `bookings.lead_id`), tenant-scoped
   RLS. Transition RPCs (atomic, audited, self-auth): `create_enquiry` (A1 ack via
@@ -177,11 +177,21 @@ docs/                     # the four sources of truth + pre-flight discipline
   thread (server actions `lib/actions/slice.ts`). Migration
   `supabase/migrations/20260531210000_b5_vertical_slice.sql` WRITTEN, not applied.
   typecheck/lint/build green. See `docs/B5-WALKTHROUGH.md`.
-  - ⏳ Vicky applies B5 migration; then `node scripts/b5-verify.mjs` (twice) +
-    b4/b3/b2/b1 regressions, and the manual walk-through, prove the gate live.
-  - **On pass: FOUNDATION WAVE COMPLETE** — PN crosses from Capable Tool (45) to
-    Product. Later waves (module migration, productization, billing, white-label)
-    are separate and NOT started.
+  - ✅ Verified live (b5 migration + b5a fix applied): `scripts/b5-verify.mjs`
+    passes twice identical (exit 0, self-cleaning) — full thread, atomic confirm +
+    deposit-as-liability, A1/A2/A5 fired, role-aware Today, composite-5% GST
+    invoice (₹200k + 5% = ₹210k; deposit ₹100k OFF the bill; per-org INV-00001;
+    F-FIN-03 closed), Owner/PM-only settlement. **B4/B3/B2/B1 regressions all
+    green, twice each.** The gate surfaced ONE composition seam (confirm_booking
+    didn't carry customer_phone → A5 had no recipient); fixed cleanly via b5a
+    (derive from lead). Composition verdict: **clean, modulo that one seam now
+    closed** — four in-spirit primitive extensions total (p_lead_id, getRoleContext
+    role/caps, customer_phone), no bypasses.
+  - **FOUNDATION WAVE COMPLETE** — PN crosses from Capable Tool (audit 45/100)
+    toward Product. The four pillars compose; the spine runs end-to-end.
+  - **NOT STARTED (separate waves, await go):** module migration (the 16 legacy
+    modules), productization/billing/white-label, live AiSensy wiring (the
+    WhatsApp/Meta session — MockProvider still default; AiSensyProvider throws).
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
