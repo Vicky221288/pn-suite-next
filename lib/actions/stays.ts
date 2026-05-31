@@ -68,3 +68,35 @@ export const setRoomStayStatus = defineAction({
   rpcOwnsCompletion: true, authorize: auth,
   run: (ctx, i) => rpcWrite('set_room_stay_status', { p_org: ctx.orgId, p_stay_id: i.stayId, p_status: i.status, p_actor_id: ctx.userId }),
 });
+
+// ── S2: front desk — walk-in, check-in (Form C gate), check-out ──────────────
+const FormCSchema = z.object({
+  passportNumber: z.string().min(1), nationality: z.string().min(1), dateOfBirth: DATE,
+  visaType: z.string().optional(), visaNumber: z.string().min(1), arrivedFrom: z.string().min(1),
+  intendedStay: z.string().optional(), nextDestination: z.string().optional(),
+});
+// map camelCase Form C → the snake_case jsonb the RPC's pn_form_c_complete expects
+function formCJson(f: z.infer<typeof FormCSchema>) {
+  return { passport_number: f.passportNumber, nationality: f.nationality, date_of_birth: f.dateOfBirth, visa_type: f.visaType ?? null, visa_number: f.visaNumber, arrived_from: f.arrivedFrom, intended_stay: f.intendedStay ?? null, next_destination: f.nextDestination ?? null };
+}
+
+export const checkInStay = defineAction({
+  name: 'stays.check_in',
+  input: z.object({ stayId: z.string().uuid(), roomId: z.string().uuid().optional(), isForeign: z.boolean().default(false), formC: FormCSchema.optional() }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('check_in_stay', { p_org: ctx.orgId, p_stay_id: i.stayId, p_room_id: i.roomId ?? null, p_is_foreign: i.isForeign, p_form_c: i.formC ? formCJson(i.formC) : null, p_actor_id: ctx.userId }),
+});
+
+export const checkOutStay = defineAction({
+  name: 'stays.check_out',
+  input: z.object({ stayId: z.string().uuid() }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('check_out_stay', { p_org: ctx.orgId, p_stay_id: i.stayId, p_actor_id: ctx.userId }),
+});
+
+export const createWalkIn = defineAction({
+  name: 'stays.walk_in',
+  input: z.object({ phone: z.string().min(6).max(20), name: z.string().min(1).max(200), roomId: z.string().uuid(), checkIn: DATE, checkOut: DATE, isForeign: z.boolean().default(false), formC: FormCSchema.optional() }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('create_walk_in', { p_org: ctx.orgId, p_phone: i.phone, p_name: i.name, p_room_id: i.roomId, p_check_in: i.checkIn, p_check_out: i.checkOut, p_is_foreign: i.isForeign, p_form_c: i.formC ? formCJson(i.formC) : null, p_actor_id: ctx.userId }),
+});

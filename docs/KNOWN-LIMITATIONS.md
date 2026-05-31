@@ -77,3 +77,29 @@ object. There is no upload, no signed-URL retrieval, no thumbnail.
 with org-scoped RLS, swap the checklist UI to a real file upload that writes the
 object and stores its key in `photo_ref`, and serve via signed URLs. Pairs
 naturally with any other Storage need (e.g. signed-contract PDFs).
+
+---
+
+## KL-4 — Form C data is captured in-suite; electronic FRRO submission is deferred
+
+**Introduced:** S2 (check-in / Form C capture).
+
+**What:** At check-in, a foreign national's Form C dataset (passport, nationality,
+DOB, visa type/number, arrived-from, intended-stay, next-destination) is captured
+and stored in `form_c_records`, and check-in is **hard-gated server-side** — a
+foreign-national check-in cannot complete without the required fields (proven by
+`scripts/s2-verify.mjs`). This brings the legal dataset on-system with an audit
+trail.
+
+**Why acceptable now:** the operational + record-keeping obligation (collect and
+retain the Form C dataset, refuse check-in without it) is met. Electronic filing
+is a separate, external, credentialed integration.
+
+**The gap:** there is NO electronic submission to the government FRRO portal
+(https://indianfrro.gov.in / the Form C API). Filing is still whatever manual/
+portal process the property uses today — the suite captures, it does not transmit.
+
+**Addressed by:** a later external-integration pass — FRRO portal/API submission
+with the property's registered hotel credentials, submission status tracking on
+`form_c_records` (e.g. submitted_at / acknowledgement ref), and retry handling.
+External-gated like the OTA/Yale integrations (W6–8+).

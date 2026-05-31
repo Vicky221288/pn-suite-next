@@ -410,7 +410,26 @@ docs/                     # the four sources of truth + pre-flight discipline
         turnover allowed**; full boundary matrix (contained/partial rejected,
         adjacent/gap allowed); cancelled/no_show don't block; different rooms OK;
         shared Guest reused; transitions guarded; atomicity on failure; org isolation; audited.
-    - **S2** — walk-ins + check-in/out workflows + Form C capture (foreign guests).
+    - **S2 — walk-ins + check-in/out + Form C: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+      Guest-movement layer on the S1 reservation. ALTER `room_stays` +
+      `checked_in_at`/`checked_out_at`/`is_foreign`. NEW `form_c_records` (FRRO
+      dataset, one per stay, stay+guest-linked). RPCs: `create_walk_in` (stay
+      created + immediate check-in in one atomic RPC; still subject to the S1 GiST
+      guard + Form C gate; reuses shared Guest), `check_in_stay` (RESERVED→CHECKED_IN,
+      assigns room if unassigned, timestamps; **Form C gate** — foreign-national
+      check-in REJECTED server-side via `pn_form_c_complete` unless passport +
+      nationality + DOB + visa# + arrived-from present; domestic = no friction),
+      `check_out_stay` (CHECKED_IN→CHECKED_OUT, timestamp only — **NO money; SETTLED
+      is S4**). Migration `20260602010000_s2_frontdesk_formc.sql` WRITTEN, not
+      applied. UI: /stays/frontdesk (walk-in + check-in w/ conditional Form C panel
+      + check-out). **Form C is captured only — electronic FRRO submission deferred,
+      logged docs/KNOWN-LIMITATIONS.md KL-4.** typecheck/lint/build green. Scope:
+      NO housekeeping/room-status (S3), NO folio/billing (S4).
+      - Harness `scripts/s2-verify.mjs` (run ×2): walk-in → checked-in (guard holds
+        on occupied room); RESERVED→CHECKED_IN timestamped, cancelled rejected;
+        Form C gate (foreign w/o fields rejected, incomplete rejected, complete
+        stored; domestic none); CHECKED_IN→CHECKED_OUT timestamped, non-checked-in
+        rejected; shared Guest reused; org isolation; atomicity; audited.
     - **S3** — housekeeping (room status lifecycle, turnover tasks).
     - **S4** — folio (room + F&B at 5% no-ITC) → consolidated invoice (W1e) + ledger.
     Built while Yanolja still runs live.

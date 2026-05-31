@@ -16,7 +16,10 @@ export default async function StaysPage() {
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Stays — Rooms</h1>
-        <Link href="/stays/reservations" className="text-sm" style={{ color: 'var(--color-brand)' }}>Reservations →</Link>
+        <span className="flex gap-3">
+          <Link href="/stays/frontdesk" className="text-sm" style={{ color: 'var(--color-brand)' }}>Front desk →</Link>
+          <Link href="/stays/reservations" className="text-sm" style={{ color: 'var(--color-brand)' }}>Reservations →</Link>
+        </span>
       </div>
 
       <section style={card}>
