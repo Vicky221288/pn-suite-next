@@ -454,7 +454,30 @@ docs/                     # the four sources of truth + pre-flight discipline
         checkout→dirty+turn task; turn assign→complete (photo-proof gate) → inspected/
         clean; maintenance lifecycle + OOO not-sellable; sellable formula; org
         isolation; atomicity; audited.
-    - **S4** — folio (room + F&B at 5% no-ITC) → consolidated invoice (W1e) + ledger.
+    - **S4 — folio + F&B-to-folio + settlement + reporting: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify). 🎉 STAYS CORE (S1–S4) DONE once verified.**
+      The Stays-core closer. `room_folios` (one per stay) + `folio_charges`
+      (room_night/fnb/other, tagged rooms_fnb). **NO parallel billing path** —
+      settlement REUSES the W1e engine: same `invoices`/`invoice_lines` tables
+      (invoices ALTERed +stay_id + supply_type 'folio'), `resolve_gst('rooms_fnb')`
+      for the rate (5% no-ITC; 18% if specified — never hardcoded), and W1e
+      `settle_invoice` for the `finance_ledger` posting (rooms_fnb → domain stays;
+      its deposit branch is booking-gated so it cleanly skips for a stay invoice).
+      **KL-2 CLOSED:** `post_room_dining_to_folio` wires a W1d room-dining
+      `kitchen_ticket` onto the guest folio as an `fnb` line (sell amount from menu
+      config; idempotent) — one kitchen / one inventory / one folio. RPCs:
+      add_folio_charge, post_room_nights (nights × rate_quoted; idempotent),
+      post_room_dining_to_folio, `settle_folio` (assembles invoice via resolve_gst,
+      reuses settle_invoice, stay CHECKED_OUT→SETTLED, deposit shown as discharge
+      not revenue, idempotent, Owner/PM-gated), `stays_report` (occupancy%/ADR/RevPAR
+      + revenue-by-stream; revenue margin-gated, occupancy counts visible).
+      Migration `20260602050000_s4_folio_settlement_reporting.sql` WRITTEN, not
+      applied. UI: /stays/folio (charges + F&B + settle) /stays/reporting (occ/ADR/
+      RevPAR). typecheck/lint/build green.
+      - Harness `scripts/s4-verify.mjs` (run ×2): room-night charge at rate; room-
+        dining → F&B line on folio + drew inventory (KL-2); settle @5% no-ITC
+        (resolved, premises-flip changes rate) → ledger stream=stays → SETTLED;
+        deposit discharge not revenue; occupancy 35%/ADR 5000/RevPAR 1750; revenue
+        gated; idempotent settle; org isolation; audited.
     Built while Yanolja still runs live.
   - **W6–8 — STAYS channel manager** (the Yanolja-replacement core: real-time
     two-way OTA sync + booking engine), **run in parallel with Yanolja.**

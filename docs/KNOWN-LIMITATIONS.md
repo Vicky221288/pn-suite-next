@@ -32,7 +32,7 @@ own default-deny policy.
 
 ---
 
-## KL-2 — Room-dining (Stays F&B) path is intentionally minimal
+## KL-2 — Room-dining (Stays F&B) path is intentionally minimal — ✅ CLOSED in S4
 
 **Introduced:** W1d.
 
@@ -51,6 +51,14 @@ Stays-domain concern.
 **Addressed by:** the STAYS core wave (W4–6) — room-stay folio integration, F&B
 menu/pricing, posting F&B consumption to the guest folio at 5% no-ITC (W1e wires
 the GST treatment; Stays wires the folio UX).
+
+**✅ CLOSED in S4 (`20260602050000_s4_folio_settlement_reporting.sql`):**
+`post_room_dining_to_folio` wires a W1d room-dining `kitchen_ticket` onto the
+guest's `room_folios`/`folio_charges` as an `fnb` line (sell amount from menu
+config, idempotent per ticket). `settle_folio` bills it at rooms_fnb 5% no-ITC via
+the W1e `resolve_gst` engine and posts revenue to `finance_ledger` (domain stays).
+Proven by `scripts/s4-verify.mjs`: the F&B charge appears on the folio AND the
+order drew inventory — one kitchen, one inventory, one guest folio.
 
 ---
 

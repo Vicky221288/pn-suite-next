@@ -1,8 +1,9 @@
 'use server';
 import { z } from 'zod';
 import { createClient as createUserClient } from '@/lib/supabase/server';
+import { getRoleContext } from '@/lib/auth/context';
 import { defineAction } from './wrapper';
-import { ActionError } from './types';
+import { ActionError, type ActionResult, err, ok } from './types';
 
 async function rpcWrite<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   const supabase = await createUserClient();
@@ -155,3 +156,41 @@ export const restoreRoom = defineAction({
   rpcOwnsCompletion: true, authorize: auth,
   run: (ctx, i) => rpcWrite('restore_room', { p_org: ctx.orgId, p_room_id: i.roomId, p_actor_id: ctx.userId }),
 });
+
+// ── S4: folio + settlement + reporting ──────────────────────────────────────
+export const addFolioCharge = defineAction({
+  name: 'stays.folio_charge',
+  input: z.object({ stayId: z.string().uuid(), chargeType: z.enum(['room_night', 'fnb', 'other']), description: z.string().max(200).optional(), amount: z.number().nonnegative() }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('add_folio_charge', { p_org: ctx.orgId, p_stay_id: i.stayId, p_charge_type: i.chargeType, p_description: i.description ?? null, p_amount: i.amount, p_source_type: 'manual', p_source_id: null, p_actor_id: ctx.userId }),
+});
+
+export const postRoomNights = defineAction({
+  name: 'stays.post_room_nights', input: z.object({ stayId: z.string().uuid() }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('post_room_nights', { p_org: ctx.orgId, p_stay_id: i.stayId, p_actor_id: ctx.userId }),
+});
+
+export const postRoomDiningToFolio = defineAction({
+  name: 'stays.fnb_to_folio', input: z.object({ ticketId: z.string().uuid(), stayId: z.string().uuid() }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('post_room_dining_to_folio', { p_org: ctx.orgId, p_ticket_id: i.ticketId, p_stay_id: i.stayId, p_actor_id: ctx.userId }),
+});
+
+/** Settle the folio → GST invoice (5% no-ITC via W1e) → ledger. Owner/PM only. */
+export const settleFolio = defineAction({
+  name: 'stays.folio_settle',
+  input: z.object({ stayId: z.string().uuid(), depositApplied: z.number().nonnegative().default(0) }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('settle_folio', { p_org: ctx.orgId, p_stay_id: i.stayId, p_deposit_applied: i.depositApplied, p_actor_id: ctx.userId }),
+});
+
+/** Occupancy / ADR / RevPAR — RPC gates revenue figures by capability. */
+export async function getStaysReport(from: string, to: string): Promise<ActionResult<unknown>> {
+  const ctx = await getRoleContext();
+  if (!ctx?.orgId) return err('unauthenticated', 'Sign in with an org.');
+  const supabase = await createUserClient();
+  const { data, error } = await supabase.rpc('stays_report', { p_org: ctx.orgId, p_from: from, p_to: to });
+  if (error) return err('rpc_error', error.message);
+  return ok(data);
+}

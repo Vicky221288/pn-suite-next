@@ -19,6 +19,8 @@ export default async function StaysPage() {
         <span className="flex gap-3">
           <Link href="/stays/frontdesk" className="text-sm" style={{ color: 'var(--color-brand)' }}>Front desk →</Link>
           <Link href="/stays/housekeeping" className="text-sm" style={{ color: 'var(--color-brand)' }}>Housekeeping →</Link>
+          <Link href="/stays/folio" className="text-sm" style={{ color: 'var(--color-brand)' }}>Folios →</Link>
+          <Link href="/stays/reporting" className="text-sm" style={{ color: 'var(--color-brand)' }}>Reporting →</Link>
           <Link href="/stays/reservations" className="text-sm" style={{ color: 'var(--color-brand)' }}>Reservations →</Link>
         </span>
       </div>
