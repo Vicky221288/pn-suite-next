@@ -352,11 +352,46 @@ docs/                     # the four sources of truth + pre-flight discipline
     - ✅ **CATERING DOMAIN (W1a–e) COMPLETE & verified live** — enquiry→quote→
       package→BEO→production/KOT→purchasing→consumption→consolidated GST invoice→
       ledger, all on the shared Guest/Event/Inventory/Ledger core.
-  - **W2–4 — HALL completion** (contracts/e-sign, payment milestones, resource
-    scheduling, execution checklists, vendor coordination, analytics; ~60% done).
-  - **W4–6 — STAYS core** (RoomStay lifecycle **+ apply the B1 GiST double-booking
-    guard to `room_bookings`**, walk-ins, check-in/out + Form C, housekeeping,
-    folio 5% no-ITC, Yale lock integration) — built while Yanolja still runs live.
+  - **W2 — HALL completion: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+    Hall is NOT greenfield — the spine already does enquiry→quote→booking→event→
+    settlement, atomic date-blocking, deposit-as-liability, composite GST. W2
+    completes all SIX named gaps (dependency-ordered), reusing proven primitives:
+    1. **Contracts/e-sign** — `hall_contracts`, **REUSES the W1c e-sign lifecycle**
+       (draft→sent→signed, versioned, immutable-once-signed). *Divergence:* keyed
+       to `booking_id` (not event/beo_type); adds terms+clauses+contract_value
+       snapshot; signed→change = new version (old superseded). RPCs generate/send/
+       sign/update_contract_terms.
+    2. **Payment milestones** — `payment_milestones` (advance@confirm + balance due
+       **T-45**, §12 #9). **REUSES B4 A5 `run_rent_reminders`** (already fires
+       T-50/47/45) for messaging — NOT rebuilt; W2 adds only the records + due/paid/
+       overdue. RPCs set_payment_schedule / mark_milestone_paid / refresh_milestone_overdue.
+    3. **Resource scheduling** — `event_staff` roster (**REUSES W0 staff**); B1
+       date_block GiST already prevents slot double-booking (this is the human
+       roster + read view). RPCs assign_event_staff / set_event_staff_status.
+    4. **Execution checklists** — `event_checklists` + `_items` with **photo-proof**
+       (requires_photo → completion REJECTED without a photo_ref — the accountability
+       moat). *Divergence:* photo_ref stores a path/URL; binary upload to Supabase
+       Storage DEFERRED (no bucket wired yet). RPCs create_event_checklist /
+       complete_checklist_item.
+    5. **Vendor coordination** — `event_vendors` (**REUSES W1d vendors**); service_type
+       + amount + commission_amount + status. RPCs assign_event_vendor / set_event_vendor_status.
+    6. **Revenue analytics** — `hall_analytics` READ RPC over `finance_ledger` hall
+       stream (realized revenue + pipeline + bookings-by-status + occupancy-by-slot);
+       revenue figures **margin-gated** (pnl.view_margin), counts always visible.
+    Migration `20260601210000_w2_hall_completion.sql` WRITTEN, not applied. UI:
+    /hall (analytics + bookings + events), /hall/bookings/[id] (contract + milestones),
+    /hall/events/[id] (roster + checklists + vendors). typecheck/lint/build green.
+    NONE deferred — all six built (only Storage binary-upload for photos is a later
+    wiring; photo_ref is captured now). Reuse-divergences flagged above.
+    - Harness `scripts/w2-verify.mjs` (run ×2): contract from confirmed booking +
+      immutable-once-signed + supersede + non-confirmed rejected; balance due T-45 +
+      paid/overdue; roster assign+status; checklist photo-proof enforced; vendor
+      linked w/ commission; analytics reads ledger hall stream + margin-gated; org
+      isolation; audited.
+  - **W4–6 — STAYS core (NEXT after W2 verifies)** (RoomStay lifecycle **+ apply the
+    B1 GiST double-booking guard to `room_bookings`**, walk-ins, check-in/out +
+    Form C, housekeeping, folio 5% no-ITC, Yale lock integration) — built while
+    Yanolja still runs live.
   - **W6–8 — STAYS channel manager** (the Yanolja-replacement core: real-time
     two-way OTA sync + booking engine), **run in parallel with Yanolja.**
   - **W8+ — Yanolja cutover** = its own slow sub-project: **parallel-run → switch
