@@ -142,7 +142,8 @@ docs/                     # the four sources of truth + pre-flight discipline
     webhook forged-sig → 401, valid → 200 + lead, replay → deduped. B2/B1
     regressions green. **A real bug was caught + fixed**: the auth middleware was
     redirecting the webhook to /login; `/api/messaging` is now a public path.
-- **Phase B4 (scheduler / automation runtime): code COMPLETE, READY FOR SQL.**
+- **Phase B4 (scheduler / automation runtime): COMPLETE ✅ — verified live** on
+  `kvyhyeqwyafpizecfbnt`. **F-AUTO-01 closed-by-test.**
   The F-AUTO-01 engine (OP MODEL §6/§8): **Vercel Cron** → secret-auth'd
   `GET /api/cron/tick` (`vercel.json`, hourly; `/api/cron` public in middleware;
   locked-500 without `CRON_SECRET`) → **rule registry** (`lib/automation/registry.ts`,
@@ -154,10 +155,15 @@ docs/                     # the four sources of truth + pre-flight discipline
   Migration `supabase/migrations/20260531180000_b4_automation.sql` WRITTEN, not
   applied. Mock send path (AiSensy still deferred). typecheck/lint/build green.
   See `docs/AUTOMATION.md`.
-  - ⏳ Vicky applies B4 migration + sets `CRON_SECRET`; then `node scripts/b4-verify.mjs`
-    (dev server up for the cron-auth Part 6) + b3/b2/b1 regressions prove it live.
-  - Next (after B4 verified): **B5 — the vertical slice** (Enquiry → Booking →
-    Event → Settlement end-to-end; the go/no-go gate).
+  - ✅ `scripts/b4-verify.mjs` passes twice identical (exit 0, self-cleaning, dev
+    server up): SLA escalation (overdue → exactly 1 + manager notified, timely →
+    0, idempotent re-tick → 0); T-50/47/45 reminders once each (T-30 none);
+    quiet-hours deferral; drain only after 07:00 IST; role-aware Today (owner has
+    money, manager omits); cron-route auth (no/wrong → 401, valid → 200).
+    **B3/B2/B1 regressions all green** (twice each). F-AUTO-01 — the 2/10 layer —
+    is structurally addressed.
+  - Next: **B5 — the vertical slice** (Enquiry → Booking → Event → Settlement
+    end-to-end; the foundation-wave go/no-go gate).
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
