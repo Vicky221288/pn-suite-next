@@ -252,7 +252,21 @@ docs/                     # the four sources of truth + pre-flight discipline
         linear ×500 exact, batch round-UP (230/50→5), no-recipe→empty, per-plate
         cost = Σ line costs (₹84) + total at N (₹42k), live inventory-cost
         flow-through (320→400 ⇒ ₹100/₹50k), org isolation, audited writes.
-    - **W1b** — catering enquiry → quote → package (revenue front-door; on shared CRM + Guest).
+    - **W1b — enquiry → quote → package: code COMPLETE, READY FOR SQL.**
+      `catering_enquiries` (create-or-LINKS a Guest via W0 find_or_create_guest —
+      no dup), `catering_packages` + `_items` (reusable menu+price templates),
+      `catering_quotes` + `_lines` (selling stored point-in-time). RPCs:
+      `create_catering_enquiry`, `upsert_package`, `create_quote` (explicit lines
+      OR package pre-fill), `quote_summary` (read; **margin/cost capability-gated
+      server-side** — Owner/PM via `pnl.view_margin` OR Catering-Lead via
+      `catering.view_cost`; selling always visible; cost computed LIVE via W1a
+      scale_recipe). NOT posted to the finance ledger (that's W1e). Migration
+      `20260601120000_w1b_catering_enquiry_quote.sql` WRITTEN, not applied. UI:
+      /catering/enquiries(+[id] quote builder) /catering/quotes/[id] /catering/packages.
+      typecheck/lint/build green.
+      - ⏳ Vicky applies → `node scripts/w1b-verify.mjs` (×2): Guest reuse, quote
+        compute, live-cost margin drift vs fixed selling, package pre-fill, margin
+        gate (owner/lead yes, operative no), org isolation, audited writes.
     - **W1c** — BEO (function sheet) + guest-guarantee, shared with the Hall event.
     - **W1d** — kitchen production / KOT + purchase planning (PO from booked recipes) + consumption draw-down (W0 inventory).
     - **W1e** — catering billing line on the consolidated GST invoice (composite-led) + per-event profitability.
