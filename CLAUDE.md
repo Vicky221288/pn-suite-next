@@ -389,7 +389,7 @@ docs/                     # the four sources of truth + pre-flight discipline
       linked w/ commission; analytics reads ledger hall stream + margin-gated; org
       isolation; audited.
   - **W4–6 — STAYS core (sub-phased S1–S4; in-suite PMS, NO OTA/Yale/Yanolja yet).**
-    - **S1 — RoomStay foundation + double-booking guard: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+    - **S1 — RoomStay foundation + double-booking guard: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt (s1-verify ×2, exit 0).
       Room inventory + the reservation lifecycle + the race-proof overlap guard.
       Tables: `room_types` (config-driven `base_rate`; **GST NOT applied here — 5%
       no-ITC is S4 folio**), `rooms` (placeholder status; housekeeping is S3),
@@ -403,8 +403,8 @@ docs/                     # the four sources of truth + pre-flight discipline
       the dates). **This fixes legacy F-DATA-01 (unguarded room booking) in-suite.**
       RPCs: upsert_room_type, create_room, set_room_status, create_room_stay
       (reuses Guest; GiST rejects overlap atomically), assign_room, set_room_stay_status
-      (guarded graph). Migration `20260601230000_s1_roomstay_foundation.sql` WRITTEN,
-      not applied. UI: /stays (rooms+types) /stays/reservations (create/list/cancel).
+      (guarded graph). Migration `20260601230000_s1_roomstay_foundation.sql` APPLIED.
+      UI: /stays (rooms+types) /stays/reservations (create/list/cancel).
       typecheck/lint/build green. Scope guard: NO walk-in/check-in/Form C/folio (S2–S4).
       - Harness `scripts/s1-verify.mjs` (run ×2): overlap rejected; **same-day
         turnover allowed**; full boundary matrix (contained/partial rejected,

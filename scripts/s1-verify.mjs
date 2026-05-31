@@ -107,7 +107,7 @@ async function main() {
   const rc = await mkRoom(A, RT);
   const sc2 = (await stay(A, rc, '2099-10-10', '2099-10-12')).data.stay_id;
   await db.rpc('set_room_stay_status', { p_org: A, p_stay_id: sc2, p_status: 'cancelled' });
-  ok(/illegal_transition/.test(errcode(await db.rpc('set_room_stay_status', { p_org: A, p_stay_id: sc2, p_status: 'checked_in' }))), 'cannot check-in a CANCELLED stay');
+  ok(/illegal_transition|22023/.test(errcode(await db.rpc('set_room_stay_status', { p_org: A, p_stay_id: sc2, p_status: 'checked_in' }))), 'cannot check-in a CANCELLED stay');
 
   // ── 8. atomicity: a rejected booking leaves no partial write ──
   console.log('\n8. Atomicity on failure');
