@@ -293,7 +293,34 @@ docs/                     # the four sources of truth + pre-flight discipline
         event), guest_count distinct from guest_guarantee, kitchen+FOH BEOs on one
         event, dietary from Guest, send→sign→signed records signature, signed BEO
         rejects edits (immutable), org isolation, audited.
-    - **W1d** — kitchen production / KOT + purchase planning (PO from booked recipes) + consumption draw-down (W0 inventory).
+    - **W1d — production/KOT + purchasing + consumption: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+      First catering sub-phase that **MOVES REAL STOCK** — every inventory change
+      routes through the W0 `record_stock_movement` RPC (NO parallel stock path).
+      **NEWLY WIRED:** `vendors` table + the FK on `inventory_items.supplier_id`
+      (a W0 forward-ref since W0). Tables: `kitchen_tickets` (KOT; source_type
+      banquet|room_dining — one banquet ticket per BEO via partial unique index),
+      `kitchen_ticket_lines`, `production_consumption` (planned + actual per
+      ingredient → variance), `purchase_orders` + `_lines`. RPCs: `generate_production`
+      (from a SIGNED BEO; scales each dish via W1a `scale_recipe` × **max(guest_count,
+      guest_guarantee)** — never under-produce — and **consolidates shared
+      ingredients** across dishes), `create_room_dining` (Stays F&B, no BEO — proves
+      one kitchen/one inventory), `plan_purchase` (shortfall = requirement − on-hand →
+      DRAFT POs **grouped by supplier**; idempotent replan), `order_purchase_order`,
+      `receive_purchase_order` (stock **IN** via record_stock_movement; re-receive
+      rejected), `close_production` (consumption **OUT**; **IDEMPOTENT** — non-open
+      ticket rejected, no double-deduct; over-draw rejected by W0 → tx rollback,
+      on-hand unchanged), `production_variance` (READ; variance + cost **gated** to
+      pnl.view_margin OR catering.view_cost, nulled for operatives), `upsert_vendor`.
+      Migration `20260601170000_w1d_production_purchasing_consumption.sql` WRITTEN,
+      not applied. UI: /catering/production (+/[id] requirement/variance/plan/close)
+      + /catering/purchase-orders (order→receive). Billing/invoice stays OUT (W1e).
+      Room-dining kept minimal — logged in **docs/KNOWN-LIMITATIONS.md (KL-2)**.
+      - Harness `scripts/w1d-verify.mjs` (run ×2): production at max(count,guarantee)
+        with consolidated oil across PBM+Biryani; shortfall→2 POs grouped by S1/S2;
+        receive increments on-hand via record_stock_movement (audited) + re-receive
+        rejected; close decrements; **2nd close rejected — no double-deduct**;
+        over-draw rejected (ghee unchanged); room-dining draws same ledger; variance
+        +cost shown to Owner / nulled for operative; org isolation; audited.
     - **W1e** — catering billing line on the consolidated GST invoice (composite-led) + per-event profitability.
   - **W2–4 — HALL completion** (contracts/e-sign, payment milestones, resource
     scheduling, execution checklists, vendor coordination, analytics; ~60% done).
