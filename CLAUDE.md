@@ -238,7 +238,7 @@ docs/                     # the four sources of truth + pre-flight discipline
   - **W1 — CATERING (the ~2-week clock = the new manager's domain): sub-phased.**
     Port the legacy Kitchen donor + benchmark structure; **port-and-extend, NOT
     greenfield.** Sub-phase plan:
-    - **W1a — menu/recipe/cost foundation: code COMPLETE, READY FOR SQL.**
+    - **W1a — menu/recipe/cost foundation: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt.
       `catering_menu_items` + `catering_recipes` + `catering_recipe_lines`
       (recipe lines link W0 `inventory_items`). `scale_recipe` RPC = the auto-scale
       + cost engine: **linear** (per-plate, continuous) / **batch** (round UP to
@@ -248,9 +248,10 @@ docs/                     # the four sources of truth + pre-flight discipline
       rate** (config-driven GST). Migration `20260601090000_w1a_catering_menu_recipe.sql`
       WRITTEN, not applied. UI `/catering/menu` + `/catering/menu/[id]` (list /
       recipe / scale-preview). typecheck/lint/build green.
-      - ⏳ Vicky applies → `node scripts/w1a-verify.mjs` (×2): linear ×500 exact,
-        batch round-up, no-recipe empty, costing to the rupee, live-cost
-        flow-through, org isolation, audited writes.
+      - ✅ `scripts/w1a-verify.mjs` passes twice identical (exit 0, self-cleaning):
+        linear ×500 exact, batch round-UP (230/50→5), no-recipe→empty, per-plate
+        cost = Σ line costs (₹84) + total at N (₹42k), live inventory-cost
+        flow-through (320→400 ⇒ ₹100/₹50k), org isolation, audited writes.
     - **W1b** — catering enquiry → quote → package (revenue front-door; on shared CRM + Guest).
     - **W1c** — BEO (function sheet) + guest-guarantee, shared with the Hall event.
     - **W1d** — kitchen production / KOT + purchase planning (PO from booked recipes) + consumption draw-down (W0 inventory).
