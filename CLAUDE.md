@@ -388,10 +388,32 @@ docs/                     # the four sources of truth + pre-flight discipline
       paid/overdue; roster assign+status; checklist photo-proof enforced; vendor
       linked w/ commission; analytics reads ledger hall stream + margin-gated; org
       isolation; audited.
-  - **W4–6 — STAYS core (NEXT after W2 verifies)** (RoomStay lifecycle **+ apply the
-    B1 GiST double-booking guard to `room_bookings`**, walk-ins, check-in/out +
-    Form C, housekeeping, folio 5% no-ITC, Yale lock integration) — built while
-    Yanolja still runs live.
+  - **W4–6 — STAYS core (sub-phased S1–S4; in-suite PMS, NO OTA/Yale/Yanolja yet).**
+    - **S1 — RoomStay foundation + double-booking guard: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+      Room inventory + the reservation lifecycle + the race-proof overlap guard.
+      Tables: `room_types` (config-driven `base_rate`; **GST NOT applied here — 5%
+      no-ITC is S4 folio**), `rooms` (placeholder status; housekeeping is S3),
+      `room_stays` (reuses the **shared W0 Guest** via find_or_create_guest;
+      status reserved→checked_in→checked_out→settled + cancelled/no_show branches,
+      guarded transitions). **THE GUARD** = B1 GiST-EXCLUDE replicated:
+      `exclude using gist (org_id =, room_id =, daterange(check_in, check_out, '[)') &&)
+      where (room_id is not null and status in ('reserved','checked_in'))`. The
+      half-open `[)` makes **same-day turnover** (checkout day = next check-in)
+      NOT a conflict; only ACTIVE stays block (cancelled/no_show/checked_out free
+      the dates). **This fixes legacy F-DATA-01 (unguarded room booking) in-suite.**
+      RPCs: upsert_room_type, create_room, set_room_status, create_room_stay
+      (reuses Guest; GiST rejects overlap atomically), assign_room, set_room_stay_status
+      (guarded graph). Migration `20260601230000_s1_roomstay_foundation.sql` WRITTEN,
+      not applied. UI: /stays (rooms+types) /stays/reservations (create/list/cancel).
+      typecheck/lint/build green. Scope guard: NO walk-in/check-in/Form C/folio (S2–S4).
+      - Harness `scripts/s1-verify.mjs` (run ×2): overlap rejected; **same-day
+        turnover allowed**; full boundary matrix (contained/partial rejected,
+        adjacent/gap allowed); cancelled/no_show don't block; different rooms OK;
+        shared Guest reused; transitions guarded; atomicity on failure; org isolation; audited.
+    - **S2** — walk-ins + check-in/out workflows + Form C capture (foreign guests).
+    - **S3** — housekeeping (room status lifecycle, turnover tasks).
+    - **S4** — folio (room + F&B at 5% no-ITC) → consolidated invoice (W1e) + ledger.
+    Built while Yanolja still runs live.
   - **W6–8 — STAYS channel manager** (the Yanolja-replacement core: real-time
     two-way OTA sync + booking engine), **run in parallel with Yanolja.**
   - **W8+ — Yanolja cutover** = its own slow sub-project: **parallel-run → switch
