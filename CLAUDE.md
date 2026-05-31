@@ -293,7 +293,7 @@ docs/                     # the four sources of truth + pre-flight discipline
         event), guest_count distinct from guest_guarantee, kitchen+FOH BEOs on one
         event, dietary from Guest, send→sign→signed records signature, signed BEO
         rejects edits (immutable), org isolation, audited.
-    - **W1d — production/KOT + purchasing + consumption: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+    - **W1d — production/KOT + purchasing + consumption: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt (w1d-verify ×2, exit 0).
       First catering sub-phase that **MOVES REAL STOCK** — every inventory change
       routes through the W0 `record_stock_movement` RPC (NO parallel stock path).
       **NEWLY WIRED:** `vendors` table + the FK on `inventory_items.supplier_id`
@@ -311,8 +311,8 @@ docs/                     # the four sources of truth + pre-flight discipline
       ticket rejected, no double-deduct; over-draw rejected by W0 → tx rollback,
       on-hand unchanged), `production_variance` (READ; variance + cost **gated** to
       pnl.view_margin OR catering.view_cost, nulled for operatives), `upsert_vendor`.
-      Migration `20260601170000_w1d_production_purchasing_consumption.sql` WRITTEN,
-      not applied. UI: /catering/production (+/[id] requirement/variance/plan/close)
+      Migration `20260601170000_w1d_production_purchasing_consumption.sql` APPLIED.
+      UI: /catering/production (+/[id] requirement/variance/plan/close)
       + /catering/purchase-orders (order→receive). Billing/invoice stays OUT (W1e).
       Room-dining kept minimal — logged in **docs/KNOWN-LIMITATIONS.md (KL-2)**.
       - Harness `scripts/w1d-verify.mjs` (run ×2): production at max(count,guarantee)
