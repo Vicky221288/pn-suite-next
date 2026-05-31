@@ -27,6 +27,9 @@ const ConfirmBookingInput = z.object({
   // B5: optionally link the won lead (sets bookings.lead_id + lead.status='won'
   // inside the same atomic tx).
   leadId: z.string().uuid().optional(),
+  // B5a: customer phone for A5 rent reminders; if omitted it is derived from the
+  // linked lead's phone inside the RPC.
+  customerPhone: z.string().min(6).max(20).optional(),
 });
 export type ConfirmBookingInput = z.infer<typeof ConfirmBookingInput>;
 
@@ -56,6 +59,7 @@ export const confirmBooking = defineAction<ConfirmBookingInput, ConfirmBookingRe
       p_actor_id: ctx.userId,
       p_parent_audit_id: ctx.auditAttemptedId,
       p_lead_id: input.leadId ?? null,
+      p_customer_phone: input.customerPhone ?? null,
     });
     if (error) {
       if (error.code === '23P01' || /slot_taken/.test(error.message)) {

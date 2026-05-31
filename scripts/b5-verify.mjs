@@ -88,9 +88,9 @@ async function main() {
   const cb = await db.rpc('confirm_booking', {
     p_org_id: ORG, p_hall_id: HALL_ID, p_event_date: eventDate, p_slot: 'full_day',
     p_hall_rent: HALL_RENT, p_customer_name: 'Ramesh', p_idempotency_key: `slice-${randomUUID()}`,
-    p_now: iso(baseNow), p_lead_id: leadThread,
+    p_lead_id: leadThread,
   });
-  ok(!cb.error && cb.data.status === 'confirmed', 'booking confirmed');
+  ok(!cb.error && cb.data?.status === 'confirmed', `booking confirmed${cb.error ? ' — ' + cb.error.message : ''}`);
   const bookingId = cb.data.booking_id;
   ok(cb.data.deposit === HALL_RENT * 0.5, `deposit = 50% hall rent (${cb.data.deposit})`);
   const held = (await db.from('deposit_ledger').select('amount,is_liability,status').eq('booking_id', bookingId).eq('entry_type', 'deposit_held').single()).data;
@@ -136,7 +136,7 @@ async function main() {
   console.log('\nDecision rights — settlement = Owner/PM only');
   const cb2 = await db.rpc('confirm_booking', {
     p_org_id: ORG, p_hall_id: HALL_ID, p_event_date: addDays(baseDate, 90), p_slot: 'full_day',
-    p_hall_rent: 150000, p_customer_name: 'Second', p_idempotency_key: `slice2-${randomUUID()}`, p_now: iso(baseNow),
+    p_hall_rent: 150000, p_customer_name: 'Second', p_idempotency_key: `slice2-${randomUUID()}`,
   });
   const mgrSettle = await MGR.client.rpc('settle_booking', { p_org: ORG, p_booking_id: cb2.data.booking_id, p_deposit_resolution: 'refund', p_now: iso(baseNow) });
   ok(!!mgrSettle.error && /42501|forbidden/.test(errcode(mgrSettle)), 'manager (no settlement.process) → forbidden');
