@@ -6,13 +6,27 @@ After B4 the product **acts on its own**: chases, reminds, escalates, builds the
 daily Today.
 
 ## Shape
-- **Scheduler:** **Vercel Cron** → `GET /api/cron/tick` (`vercel.json`, hourly).
-  Chosen over pg_cron because rules send via the B3 `MessagingProvider` (a TS
-  interface; live AiSensy makes HTTP calls) — the engine must run in the app
-  runtime, versioned with code. The route is **secret-authenticated**
-  (`Authorization: Bearer $CRON_SECRET`), `/api/cron` is excluded from the
-  session redirect in middleware, and with no secret set it is **locked (500)**,
-  never open.
+- **Scheduler:** **Vercel Cron** → `GET /api/cron/tick`. Chosen over pg_cron
+  because rules send via the B3 `MessagingProvider` (a TS interface; live AiSensy
+  makes HTTP calls) — the engine must run in the app runtime, versioned with code.
+  The route is **secret-authenticated** (`Authorization: Bearer $CRON_SECRET`),
+  `/api/cron` is excluded from the session redirect in middleware, and with no
+  secret set it is **locked (500)**, never open.
+
+  **Cadence — Vercel plan-dependent (crons run in UTC):**
+  - **Hobby (current): once daily.** `vercel.json` = `30 1 * * *` (01:30 UTC =
+    **07:00 IST**) — pinned to the A10 window. ⚠️ Do NOT use `0 7 * * *`: that's
+    07:00 UTC = 12:30 IST, and A10 (`hourIST===7`) would never fire.
+  - **Pro (later): hourly.** Restore `0 * * * *`. A10 still fires once (at the
+    7 o'clock IST tick); A2/A5/drain run every hour.
+
+  **Daily-tick behaviour & limitation (Hobby):**
+  | Rule | Daily-tick correctness |
+  |---|---|
+  | A10 Today | ✅ builds at the 07:00 IST tick (exactly once/day; idempotent per date) |
+  | A5 rent reminders | ✅ date-milestone based (event_date − today ∈ {50,47,45}); a daily tick hits each milestone exactly once on its day |
+  | drain_outbound | ✅ quiet-hours-deferred messages (`scheduled_for` = next 07:00 IST) drain at the 07:00 tick |
+  | **A2 SLA escalation** | ⚠️ **granularity reduced to daily.** The rule still escalates correctly, but only at the daily tick — so an unanswered enquiry is escalated at the next 07:00 IST, not within 2h. **The 2-hour SLA is enforced ~daily on Hobby; restore hourly cron on Vercel Pro to get true 2-hour granularity.** (The rule logic is unchanged — only how often it's evaluated.)
 - **Rule registry** (`lib/automation/registry.ts`): declarative entries
   `{ key, rpc, cadence, scope }`. The executor (`runTick`) is generic — **adding a
   rule is a registry entry**, not engine surgery. It lists orgs and invokes each

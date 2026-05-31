@@ -33,7 +33,12 @@ const RULES: Rule[] = [
 
 function isDue(rule: Rule, now: Date): boolean {
   if (rule.cadence === 'every_tick') return true;
-  if (rule.cadence === 'daily_0700') return hourIST(now) === 7; // the 07:00 IST build window
+  // A10 fires in the 07:00 IST hour. COUPLED to the cron schedule in vercel.json:
+  // Vercel crons run in UTC, and on the Hobby plan we get ONE daily tick — it MUST
+  // be `30 1 * * *` (01:30 UTC = 07:00 IST) so this window matches. (`0 7 * * *`
+  // would be 12:30 IST and A10 would never fire.) On Vercel Pro we restore hourly
+  // (`0 * * * *`); this window still fires exactly once (at the 7 o'clock tick).
+  if (rule.cadence === 'daily_0700') return hourIST(now) === 7;
   return false;
 }
 

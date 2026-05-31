@@ -145,8 +145,10 @@ docs/                     # the four sources of truth + pre-flight discipline
 - **Phase B4 (scheduler / automation runtime): COMPLETE ✅ — verified live** on
   `kvyhyeqwyafpizecfbnt`. **F-AUTO-01 closed-by-test.**
   The F-AUTO-01 engine (OP MODEL §6/§8): **Vercel Cron** → secret-auth'd
-  `GET /api/cron/tick` (`vercel.json`, hourly; `/api/cron` public in middleware;
-  locked-500 without `CRON_SECRET`) → **rule registry** (`lib/automation/registry.ts`,
+  `GET /api/cron/tick` (`vercel.json` = `30 1 * * *` = 07:00 IST daily on Hobby —
+  pinned to the A10 window; restore `0 * * * *` hourly on Pro. SLA-escalation
+  granularity is daily on Hobby — see `docs/AUTOMATION.md`. `/api/cron` public in
+  middleware; locked-500 without `CRON_SECRET`) → **rule registry** (`lib/automation/registry.ts`,
   declarative; adding a rule = an entry) → atomic, idempotent, IST-anchored,
   quiet-hours-aware **rule RPCs** with per-entity subtransactions:
   `run_sla_escalations` (A2 — overdue lead → flag + notify manager via B3),
