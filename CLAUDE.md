@@ -164,6 +164,24 @@ docs/                     # the four sources of truth + pre-flight discipline
     is structurally addressed.
   - Next: **B5 — the vertical slice** (Enquiry → Booking → Event → Settlement
     end-to-end; the foundation-wave go/no-go gate).
+- **Phase B5 (vertical slice — GO/NO-GO GATE): code COMPLETE, READY FOR SQL.**
+  Composes B1–B4 into ONE thread: Enquiry → Quote → Booking → Event → Settlement.
+  Spine tables `quotes`/`events`/`invoices` (+ `bookings.lead_id`), tenant-scoped
+  RLS. Transition RPCs (atomic, audited, self-auth): `create_enquiry` (A1 ack via
+  B3), `record_followup`, `create_quote`, `confirm_booking` (EXTENDED with
+  `p_lead_id` — links won lead), `create_event`, `settle_booking` (composite-5%
+  GST invoice — SAC 9963, per-org numbering — + deposit resolution; Owner/PM-only
+  via `settlement.process`). Deposit stays a separate escrowed liability, NEVER
+  in the invoice (§12 #6); invoice fixes F-FIN-03. UI: `/today` wired to the B4
+  builder (real command surface), `/enquiries` + `/enquiries/[id]` drive the
+  thread (server actions `lib/actions/slice.ts`). Migration
+  `supabase/migrations/20260531210000_b5_vertical_slice.sql` WRITTEN, not applied.
+  typecheck/lint/build green. See `docs/B5-WALKTHROUGH.md`.
+  - ⏳ Vicky applies B5 migration; then `node scripts/b5-verify.mjs` (twice) +
+    b4/b3/b2/b1 regressions, and the manual walk-through, prove the gate live.
+  - **On pass: FOUNDATION WAVE COMPLETE** — PN crosses from Capable Tool (45) to
+    Product. Later waves (module migration, productization, billing, white-label)
+    are separate and NOT started.
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")

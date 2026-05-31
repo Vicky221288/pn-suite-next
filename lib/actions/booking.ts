@@ -24,6 +24,9 @@ const ConfirmBookingInput = z.object({
   hallRent: z.number().nonnegative(),
   customerName: z.string().min(1).max(200),
   idempotencyKey: z.string().min(8).max(200),
+  // B5: optionally link the won lead (sets bookings.lead_id + lead.status='won'
+  // inside the same atomic tx).
+  leadId: z.string().uuid().optional(),
 });
 export type ConfirmBookingInput = z.infer<typeof ConfirmBookingInput>;
 
@@ -52,6 +55,7 @@ export const confirmBooking = defineAction<ConfirmBookingInput, ConfirmBookingRe
       p_idempotency_key: input.idempotencyKey,
       p_actor_id: ctx.userId,
       p_parent_audit_id: ctx.auditAttemptedId,
+      p_lead_id: input.leadId ?? null,
     });
     if (error) {
       if (error.code === '23P01' || /slot_taken/.test(error.message)) {
