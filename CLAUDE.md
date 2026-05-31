@@ -410,7 +410,7 @@ docs/                     # the four sources of truth + pre-flight discipline
         turnover allowed**; full boundary matrix (contained/partial rejected,
         adjacent/gap allowed); cancelled/no_show don't block; different rooms OK;
         shared Guest reused; transitions guarded; atomicity on failure; org isolation; audited.
-    - **S2 — walk-ins + check-in/out + Form C: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+    - **S2 — walk-ins + check-in/out + Form C: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt (s2-verify ×2, exit 0).
       Guest-movement layer on the S1 reservation. ALTER `room_stays` +
       `checked_in_at`/`checked_out_at`/`is_foreign`. NEW `form_c_records` (FRRO
       dataset, one per stay, stay+guest-linked). RPCs: `create_walk_in` (stay
@@ -421,7 +421,7 @@ docs/                     # the four sources of truth + pre-flight discipline
       nationality + DOB + visa# + arrived-from present; domestic = no friction),
       `check_out_stay` (CHECKED_IN→CHECKED_OUT, timestamp only — **NO money; SETTLED
       is S4**). Migration `20260602010000_s2_frontdesk_formc.sql` WRITTEN, not
-      applied. UI: /stays/frontdesk (walk-in + check-in w/ conditional Form C panel
+      APPLIED. UI: /stays/frontdesk (walk-in + check-in w/ conditional Form C panel
       + check-out). **Form C is captured only — electronic FRRO submission deferred,
       logged docs/KNOWN-LIMITATIONS.md KL-4.** typecheck/lint/build green. Scope:
       NO housekeeping/room-status (S3), NO folio/billing (S4).
