@@ -454,7 +454,7 @@ docs/                     # the four sources of truth + pre-flight discipline
         checkout→dirty+turn task; turn assign→complete (photo-proof gate) → inspected/
         clean; maintenance lifecycle + OOO not-sellable; sellable formula; org
         isolation; atomicity; audited.
-    - **S4 — folio + F&B-to-folio + settlement + reporting: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify). 🎉 STAYS CORE (S1–S4) DONE once verified.**
+    - **S4 — folio + F&B-to-folio + settlement + reporting: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt (s4-verify ×2, exit 0). **🎉 STAYS CORE (S1–S4) COMPLETE & verified live.**
       The Stays-core closer. `room_folios` (one per stay) + `folio_charges`
       (room_night/fnb/other, tagged rooms_fnb). **NO parallel billing path** —
       settlement REUSES the W1e engine: same `invoices`/`invoice_lines` tables
@@ -470,8 +470,8 @@ docs/                     # the four sources of truth + pre-flight discipline
       reuses settle_invoice, stay CHECKED_OUT→SETTLED, deposit shown as discharge
       not revenue, idempotent, Owner/PM-gated), `stays_report` (occupancy%/ADR/RevPAR
       + revenue-by-stream; revenue margin-gated, occupancy counts visible).
-      Migration `20260602050000_s4_folio_settlement_reporting.sql` WRITTEN, not
-      applied. UI: /stays/folio (charges + F&B + settle) /stays/reporting (occ/ADR/
+      Migration `20260602050000_s4_folio_settlement_reporting.sql` APPLIED.
+      UI: /stays/folio (charges + F&B + settle) /stays/reporting (occ/ADR/
       RevPAR). typecheck/lint/build green.
       - Harness `scripts/s4-verify.mjs` (run ×2): room-night charge at rate; room-
         dining → F&B line on folio + drew inventory (KL-2); settle @5% no-ITC
