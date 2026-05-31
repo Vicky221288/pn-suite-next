@@ -123,8 +123,22 @@ docs/                     # the four sources of truth + pre-flight discipline
     w/o `booking.confirm` rejected; owner-in-A powerless in B); B1
     atomic/concurrency/idempotency guarantees intact under RLS+FK. **F-SEC-04
     closed-by-test.**
-  - Next: **B3 — messaging foundation** (MessagingProvider + AiSensy adapter,
-    idempotent/quiet-hours outbound, auth'd inbound webhook).
+- **Phase B3 (messaging foundation): code COMPLETE, READY FOR SQL.** Provider-
+  agnostic `MessagingProvider` interface (`lib/messaging/`); **multi-sender**
+  (`message_senders`, keyed `(org_id, function_area)` — `stays` + `hall_catering`,
+  routed server-side; inbound routed by receiving number). `enqueue_outbound` RPC:
+  idempotent + quiet-hours-aware (defer 21:00–07:00 IST → next 07:00) + audited.
+  `ingest_inbound` RPC: replay-safe dedup + atomic tenant-scoped lead create/match.
+  Inbound route `app/api/messaging/inbound/route.ts`: HMAC-SHA256 signature auth.
+  **MockProvider** records (default); **AiSensyProvider** is a shell — **live
+  wiring DEFERRED to the WhatsApp/Meta session (gate)**; never call live AiSensy/
+  Meta until then. Migration `supabase/migrations/20260531150000_b3_messaging.sql`
+  WRITTEN, not applied. typecheck/lint/build green. See `docs/MESSAGING.md`.
+  - ⏳ Vicky applies B3 migration + sets `MESSAGING_WEBHOOK_SECRET`; then
+    `node scripts/b3-verify.mjs` (run with the dev server up for the inbound-auth
+    Part 3) + b2/b1 regressions prove it live.
+  - Next (after B3 verified): **B4 — scheduler / automation runtime** (cron,
+    rule executor, drains deferred outbound, SLA escalation).
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
@@ -143,6 +157,11 @@ WCAG AA: `--green-500` #2F7D52→#256840, `--amber-500` #B5791E→#8A5912, dark
   from the session (the F-SEC-04 fix). Every new table ships RLS-default-deny +
   an `org_id`-scoped SELECT policy; writes go through a SECURITY DEFINER RPC that
   self-authorizes on `auth.uid()`. No god-role: even `owner` is property-scoped.
+- Do NOT call a WhatsApp/BSP SDK directly — all messaging goes through the
+  `MessagingProvider` interface (`docs/MESSAGING.md`). Outbound is idempotent +
+  quiet-hours-aware (21:00–07:00 IST); inbound is signature-authenticated +
+  replay-safe. Senders are per-(org, function_area) config, never literals. Live
+  AiSensy/Meta wiring is DEFERRED — do not call live endpoints until that session.
 - Do NOT hardcode any single-property value ("PN", "10 rooms", GSTIN, addresses).
 - Do NOT commit secrets or `.har`/`.env*` files (AUDIT F-SEC-01 — the legacy leak).
 - Do NOT push or deploy — that's Vicky's.
