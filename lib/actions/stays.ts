@@ -100,3 +100,58 @@ export const createWalkIn = defineAction({
   rpcOwnsCompletion: true, authorize: auth,
   run: (ctx, i) => rpcWrite('create_walk_in', { p_org: ctx.orgId, p_phone: i.phone, p_name: i.name, p_room_id: i.roomId, p_check_in: i.checkIn, p_check_out: i.checkOut, p_is_foreign: i.isForeign, p_form_c: i.formC ? formCJson(i.formC) : null, p_actor_id: ctx.userId }),
 });
+
+// ── S3: housekeeping + maintenance ──────────────────────────────────────────
+export const setHousekeepingStatus = defineAction({
+  name: 'stays.hk_status',
+  input: z.object({ roomId: z.string().uuid(), status: z.enum(['clean', 'dirty', 'inspected', 'out_of_order']) }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('set_housekeeping_status', { p_org: ctx.orgId, p_room_id: i.roomId, p_status: i.status, p_actor_id: ctx.userId }),
+});
+
+export const createHousekeepingTask = defineAction({
+  name: 'stays.hk_task_create',
+  input: z.object({ roomId: z.string().uuid(), kind: z.string().max(40).default('turnover'), requiresPhoto: z.boolean().default(false) }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('create_housekeeping_task', { p_org: ctx.orgId, p_room_id: i.roomId, p_kind: i.kind, p_requires_photo: i.requiresPhoto, p_stay_id: null, p_actor_id: ctx.userId }),
+});
+
+export const assignHousekeepingTask = defineAction({
+  name: 'stays.hk_task_assign',
+  input: z.object({ taskId: z.string().uuid(), staffId: z.string().uuid() }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('assign_housekeeping_task', { p_org: ctx.orgId, p_task_id: i.taskId, p_staff_id: i.staffId, p_actor_id: ctx.userId }),
+});
+
+export const completeHousekeepingTask = defineAction({
+  name: 'stays.hk_task_complete',
+  input: z.object({ taskId: z.string().uuid(), photoRef: z.string().max(500).optional(), result: z.enum(['clean', 'inspected']).default('inspected') }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('complete_housekeeping_task', { p_org: ctx.orgId, p_task_id: i.taskId, p_photo_ref: i.photoRef ?? null, p_result: i.result, p_actor_id: ctx.userId }),
+});
+
+export const createMaintenanceRequest = defineAction({
+  name: 'stays.maint_create',
+  input: z.object({ roomId: z.string().uuid(), description: z.string().min(1).max(1000), priority: z.enum(['low', 'medium', 'high', 'critical']).default('medium') }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('create_maintenance_request', { p_org: ctx.orgId, p_room_id: i.roomId, p_description: i.description, p_priority: i.priority, p_actor_id: ctx.userId }),
+});
+
+export const setMaintenanceStatus = defineAction({
+  name: 'stays.maint_status',
+  input: z.object({ requestId: z.string().uuid(), status: z.enum(['open', 'in_progress', 'resolved']), staffId: z.string().uuid().optional() }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('set_maintenance_status', { p_org: ctx.orgId, p_request_id: i.requestId, p_status: i.status, p_staff_id: i.staffId ?? null, p_actor_id: ctx.userId }),
+});
+
+export const setRoomOutOfOrder = defineAction({
+  name: 'stays.room_ooo', input: z.object({ roomId: z.string().uuid() }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('set_room_out_of_order', { p_org: ctx.orgId, p_room_id: i.roomId, p_actor_id: ctx.userId }),
+});
+
+export const restoreRoom = defineAction({
+  name: 'stays.room_restore', input: z.object({ roomId: z.string().uuid() }),
+  rpcOwnsCompletion: true, authorize: auth,
+  run: (ctx, i) => rpcWrite('restore_room', { p_org: ctx.orgId, p_room_id: i.roomId, p_actor_id: ctx.userId }),
+});

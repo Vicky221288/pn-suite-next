@@ -430,7 +430,30 @@ docs/                     # the four sources of truth + pre-flight discipline
         Form C gate (foreign w/o fields rejected, incomplete rejected, complete
         stored; domestic none); CHECKED_IN→CHECKED_OUT timestamped, non-checked-in
         rejected; shared Guest reused; org isolation; atomicity; audited.
-    - **S3** — housekeeping (room status lifecycle, turnover tasks).
+    - **S3 — housekeeping + room status board + maintenance: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+      **TWO INDEPENDENT DIMENSIONS** (modelled separately, not collapsed):
+      *occupancy* DERIVED from S1 room_stays (a checked_in stay = occupied,
+      never stored) + *housekeeping* STORED on the room
+      (`rooms.housekeeping_status` clean/dirty/inspected/out_of_order). **Sellable =
+      in-service (rooms.status='available') AND vacant AND hk ∈ (inspected,clean).**
+      Tables: `housekeeping_tasks` (turns; assignable to W0 staff; **W2 photo-proof
+      gate** reused), `maintenance_requests` (open→in_progress→resolved, priority,
+      assignable). RPCs: set_housekeeping_status, create/assign/complete_housekeeping_task
+      (complete → room inspected/clean; photo-required rejected w/o ref),
+      create_maintenance_request, set_maintenance_status (guarded), set_room_out_of_order
+      / restore_room, `room_board` (READ: occupancy+housekeeping+sellable grid).
+      **CHECK-OUT→DIRTY MECHANISM CHOICE: extended the S2 `check_out_stay` RPC INLINE
+      (CREATE OR REPLACE, same atomic tx) — NOT a DB trigger, NOT a B4 async rule.
+      Rationale: same-tx atomicity+audit, write logic in one discoverable RPC, the
+      codebase uses explicit RPCs (no triggers); a B4 rule would be eventual (wrong
+      for an on-checkout side-effect).** Migration `20260602030000_s3_housekeeping_maintenance.sql`
+      WRITTEN, not applied. UI: /stays/housekeeping (board + turn queue + maintenance).
+      typecheck/lint/build green. Scope: NO folio/billing or occupancy/revenue
+      reporting (S4).
+      - Harness `scripts/s3-verify.mjs` (run ×2): occupancy⊥housekeeping independence;
+        checkout→dirty+turn task; turn assign→complete (photo-proof gate) → inspected/
+        clean; maintenance lifecycle + OOO not-sellable; sellable formula; org
+        isolation; atomicity; audited.
     - **S4** — folio (room + F&B at 5% no-ITC) → consolidated invoice (W1e) + ledger.
     Built while Yanolja still runs live.
   - **W6–8 — STAYS channel manager** (the Yanolja-replacement core: real-time
