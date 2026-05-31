@@ -142,8 +142,22 @@ docs/                     # the four sources of truth + pre-flight discipline
     webhook forged-sig → 401, valid → 200 + lead, replay → deduped. B2/B1
     regressions green. **A real bug was caught + fixed**: the auth middleware was
     redirecting the webhook to /login; `/api/messaging` is now a public path.
-  - Next: **B4 — scheduler / automation runtime** (cron, rule executor, drains
-    the deferred-outbound queue, SLA escalation).
+- **Phase B4 (scheduler / automation runtime): code COMPLETE, READY FOR SQL.**
+  The F-AUTO-01 engine (OP MODEL §6/§8): **Vercel Cron** → secret-auth'd
+  `GET /api/cron/tick` (`vercel.json`, hourly; `/api/cron` public in middleware;
+  locked-500 without `CRON_SECRET`) → **rule registry** (`lib/automation/registry.ts`,
+  declarative; adding a rule = an entry) → atomic, idempotent, IST-anchored,
+  quiet-hours-aware **rule RPCs** with per-entity subtransactions:
+  `run_sla_escalations` (A2 — overdue lead → flag + notify manager via B3),
+  `run_rent_reminders` (A5 — T-50/47/45), `build_today` (A10 — role-aware 07:00
+  Today; money Owner/PM-only), `drain_outbound` (release B3 quiet-hours queue).
+  Migration `supabase/migrations/20260531180000_b4_automation.sql` WRITTEN, not
+  applied. Mock send path (AiSensy still deferred). typecheck/lint/build green.
+  See `docs/AUTOMATION.md`.
+  - ⏳ Vicky applies B4 migration + sets `CRON_SECRET`; then `node scripts/b4-verify.mjs`
+    (dev server up for the cron-auth Part 6) + b3/b2/b1 regressions prove it live.
+  - Next (after B4 verified): **B5 — the vertical slice** (Enquiry → Booking →
+    Event → Settlement end-to-end; the go/no-go gate).
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
@@ -167,6 +181,11 @@ WCAG AA: `--green-500` #2F7D52→#256840, `--amber-500` #B5791E→#8A5912, dark
   quiet-hours-aware (21:00–07:00 IST); inbound is signature-authenticated +
   replay-safe. Senders are per-(org, function_area) config, never literals. Live
   AiSensy/Meta wiring is DEFERRED — do not call live endpoints until that session.
+- Do NOT add automation outside the rule registry (`docs/AUTOMATION.md`). A new
+  automation = an atomic, idempotent, IST-anchored, quiet-hours-aware RPC + a
+  registry entry; it sends via B3 and writes via the atomic path. Cron/webhook
+  routes are secret/signature-authenticated and excluded from the session
+  redirect — never public, never bypassing auth.
 - Do NOT hardcode any single-property value ("PN", "10 rooms", GSTIN, addresses).
 - Do NOT commit secrets or `.har`/`.env*` files (AUDIT F-SEC-01 — the legacy leak).
 - Do NOT push or deploy — that's Vicky's.

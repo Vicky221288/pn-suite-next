@@ -52,6 +52,17 @@ export function dateKeyIST(date: Date): string {
   return `${p.year}-${pad(p.month)}-${pad(p.day)}`;
 }
 
+/** Hour-of-day (0–23) in IST. Used by the scheduler for time-of-day rules. */
+export function hourIST(date: Date = new Date()): number {
+  return istParts(date).hour;
+}
+
+/** True during quiet hours 21:00–07:00 IST (no automated WhatsApp). */
+export function isQuietHoursIST(date: Date = new Date()): boolean {
+  const h = istParts(date).hour;
+  return h >= 21 || h < 7;
+}
+
 /**
  * Time formatted as 'h:mm AM/PM' in IST — built manually (not via toLocaleString
  * with 'en-IN') to avoid the SSR/client hydration mismatch on the AM/PM marker.
