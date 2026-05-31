@@ -195,6 +195,34 @@ docs/                     # the four sources of truth + pre-flight discipline
     modules), productization/billing/white-label, live AiSensy wiring (the
     WhatsApp/Meta session — MockProvider still default; AiSensyProvider throws).
 
+## Wave status (stamp)
+- **✅ FOUNDATION WAVE COMPLETE (B0–B5)** — live on Vercel, walked end-to-end by a
+  human. First PN tenant seeded (`scripts/seed-pn-tenant.mjs`). Audit findings
+  **closed-by-test:** `F-SEC-04` (cross-tenant isolation), `F-AUTO-01` (no
+  automation → the rule engine), `F-DATA-01` (room/hall double-booking → GiST
+  EXCLUDE), `F-DATA-02` (UTC→IST dates), `F-FIN-03` (no GST invoice → composite-5%).
+- **▶ MODULE-MIGRATION WAVE STARTED — inventory phase.** Map of the legacy app
+  (`Vicky221288/pn-master-suite`, audited 45/100): **`docs/LEGACY-MODULE-INVENTORY.md`**
+  (16 modules, 40 tables). Three work-types identified:
+  - **(a) True migrations** — port legacy *logic* onto the spine (atomic RPC +
+    org_id + RLS): Guest CRM (unify identity first), Checklists/Tasks, HR/
+    Attendance/Leave/Roster, Vendors+commissions, Inventory, Dynamic Pricing,
+    Revenue/Reports/P&L (leaf, last), Campaigns/lead-source, LED, Expense Approval.
+    Hall Event flow is **already done** via the B5 slice.
+  - **(b) Catering — EXTEND, not pure greenfield.** Correction: legacy HAS a
+    Kitchen module (per-plate math, vendor commissions, breakfast orders, prep
+    lists) to port; the NEW scope adds full banquet-catering E2E + PN Stays
+    room-dining/F&B + guest-guarantee + KOT + inventory linkage. Needs E2E design.
+  - **(c) Rooms/Stays + Yale key-activation + Yanolja/OTA channel management** —
+    heaviest, external-integration-gated. Legacy Rooms is manual + basic (OTA =
+    source *labels* only, no sync; **NO Yale/smart-lock, NO Yanolja, NO channel
+    manager** — all greenfield). Port the room lifecycle onto the spine **and fix
+    the legacy room double-booking defect** (apply the B1 GiST guard), then build
+    the external-gated pieces.
+- **Deferred gates (external/again):** live **AiSensy** (WhatsApp/Meta session),
+  **Yale** API access, **Yanolja/OTA** scoping, and a **UI-polish pass** (the
+  spine screens are minimal-but-real).
+
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
 darkened two status colors and brightened dark-mode brand text so all pairs pass
