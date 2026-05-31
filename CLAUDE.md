@@ -28,11 +28,17 @@ fully separate from RHS CRM NXT (which is only a *convention donor* — see
 - RHS CRM NXT runs on its own separate project — no relation to either.
 
 ## Sources of truth (read in this order)
-1. `docs/PN-OP-MODEL-v1.2.md` — the operating model. All §12 decisions LOCKED.
-   Internalize §10 (multi-tenant), §6 (automation/messaging), §11 (invariants).
-2. `docs/PN-Foundation-Wave-Build-Plan-v1.md` — the sequenced wave plan.
-3. `docs/REUSE-ANALYSIS.md` — what lifts from RHS vs what's greenfield.
-4. `docs/AUDIT-2.0.md` — why we're rebuilding (the finding IDs we answer to).
+1. **`docs/PN-Suite-NXT-OP-MODEL-v2.md` — THE GOVERNING DESIGN (supersedes v1.2).**
+   PN Suite NXT = ONE integrated hospitality OS: **Hall + Stays + Catering** over a
+   shared core. Internalize Part 2 (shared core + integration invariants 7–11),
+   Part 3 (three domain designs), Part 4 (the locked Wave C build sequence).
+2. `docs/PN-OP-MODEL-v1.2.md` — SUPERSEDED by v2 but still valid as the shared-core
+   contract (spine, atomicity, multi-tenancy, messaging, automation, GST, §12
+   locked decisions all carry forward into v2).
+3. `docs/LEGACY-MODULE-INVENTORY.md` — the legacy map (16 modules; what to port).
+4. `docs/PN-Foundation-Wave-Build-Plan-v1.md` — the (completed) foundation-wave plan.
+5. `docs/REUSE-ANALYSIS.md` — what lifts from RHS vs what's greenfield.
+6. `docs/AUDIT-2.0.md` — why we're rebuilding (the finding IDs we answer to).
 
 ## Non-negotiable invariants (OP MODEL §11)
 1. **Every write is atomic and server-side** via the **wrapper + RPC** pattern:
@@ -201,27 +207,38 @@ docs/                     # the four sources of truth + pre-flight discipline
   **closed-by-test:** `F-SEC-04` (cross-tenant isolation), `F-AUTO-01` (no
   automation → the rule engine), `F-DATA-01` (room/hall double-booking → GiST
   EXCLUDE), `F-DATA-02` (UTC→IST dates), `F-FIN-03` (no GST invoice → composite-5%).
-- **▶ MODULE-MIGRATION WAVE STARTED — inventory phase.** Map of the legacy app
-  (`Vicky221288/pn-master-suite`, audited 45/100): **`docs/LEGACY-MODULE-INVENTORY.md`**
-  (16 modules, 40 tables). Three work-types identified:
-  - **(a) True migrations** — port legacy *logic* onto the spine (atomic RPC +
-    org_id + RLS): Guest CRM (unify identity first), Checklists/Tasks, HR/
-    Attendance/Leave/Roster, Vendors+commissions, Inventory, Dynamic Pricing,
-    Revenue/Reports/P&L (leaf, last), Campaigns/lead-source, LED, Expense Approval.
-    Hall Event flow is **already done** via the B5 slice.
-  - **(b) Catering — EXTEND, not pure greenfield.** Correction: legacy HAS a
-    Kitchen module (per-plate math, vendor commissions, breakfast orders, prep
-    lists) to port; the NEW scope adds full banquet-catering E2E + PN Stays
-    room-dining/F&B + guest-guarantee + KOT + inventory linkage. Needs E2E design.
-  - **(c) Rooms/Stays + Yale key-activation + Yanolja/OTA channel management** —
-    heaviest, external-integration-gated. Legacy Rooms is manual + basic (OTA =
-    source *labels* only, no sync; **NO Yale/smart-lock, NO Yanolja, NO channel
-    manager** — all greenfield). Port the room lifecycle onto the spine **and fix
-    the legacy room double-booking defect** (apply the B1 GiST guard), then build
-    the external-gated pieces.
-- **Deferred gates (external/again):** live **AiSensy** (WhatsApp/Meta session),
-  **Yale** API access, **Yanolja/OTA** scoping, and a **UI-polish pass** (the
-  spine screens are minimal-but-real).
+- **🧭 OP MODEL v2 LOCKED — governs everything now (supersedes v1.2).**
+  `docs/PN-Suite-NXT-OP-MODEL-v2.md`. PN Suite NXT = **ONE integrated hospitality
+  OS** — Hall + Stays + Catering as three views over a **shared core** (Guest,
+  Event, RoomStay, Inventory, Finance/Ledger, Staff, Vendor, CRM, Compliance +
+  the B3/B4/B5 services). Everything in v1.2 (spine, atomicity, multi-tenancy,
+  messaging, automation, GST) carries forward as that shared core.
+  - **Integration invariants 7–11 (new, in force):** 7) one Guest, many roles;
+    8) one Event, many services; 9) one Inventory, many consumers; 10) one Ledger,
+    many streams (P&L is a query, not a reconciliation); 11) domains are views +
+    rules over the shared core, **never separate databases/silos**.
+- **▶ WAVE C — module build, sequence LOCKED (v2 Part 4):**
+  - **W0 — minimal shared core:** Guest + Inventory + Staff + Finance-ledger (the
+    deps Catering needs; small, on the proven spine). **← NEXT BUILD.**
+  - **W1–2 — CATERING (the ~2-week clock = the new manager's domain):** **port the
+    legacy Kitchen donor + benchmark structure** (menu/recipe-auto-scale/ingredient
+    costing/packages/BEO/KOT/purchase planning/consumption; banquet + Stays-F&B
+    service models). Catering = **port-and-extend, NOT greenfield.**
+  - **W2–4 — HALL completion** (contracts/e-sign, payment milestones, resource
+    scheduling, execution checklists, vendor coordination, analytics; ~60% done).
+  - **W4–6 — STAYS core** (RoomStay lifecycle **+ apply the B1 GiST double-booking
+    guard to `room_bookings`**, walk-ins, check-in/out + Form C, housekeeping,
+    folio 5% no-ITC, Yale lock integration) — built while Yanolja still runs live.
+  - **W6–8 — STAYS channel manager** (the Yanolja-replacement core: real-time
+    two-way OTA sync + booking engine), **run in parallel with Yanolja.**
+  - **W8+ — Yanolja cutover** = its own slow sub-project: **parallel-run → switch
+    ONE OTA at a time → gradual; NEVER a hard flip** (a dropped reservation is a
+    real guest at the door — highest-risk operation in the program).
+  - **Later:** CRM frills (LTV/anniversary/reviews), Compliance/renewals tracker.
+- **Deferred gates / standing lead-time clocks (OPEN — start now):** **Yale API
+  access** scoping · **Yanolja export** scoping (CSV/API for reservations/guests/
+  rates/OTA-mappings/folios) · live **AiSensy** (WhatsApp/Meta) · payment-gateway
+  choice · OTA credentials · **UI-polish pass** (spine screens are minimal-but-real).
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
