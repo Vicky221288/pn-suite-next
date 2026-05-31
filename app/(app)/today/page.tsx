@@ -63,6 +63,7 @@ export default async function TodayPage() {
             Enquiries → quote → booking → event → settlement →
           </Link>
           <Link href="/guests" style={{ color: 'var(--color-brand)' }}>Guests (shared-core identity) →</Link>
+          <Link href="/catering/menu" style={{ color: 'var(--color-brand)' }}>Catering — menu &amp; recipes →</Link>
         </div>
         <p className="mt-2 text-xs" style={{ color: 'var(--color-text-tertiary)' }}>
           Signed in as <span style={{ fontFamily: 'var(--font-mono)' }}>{ctx?.email}</span>
