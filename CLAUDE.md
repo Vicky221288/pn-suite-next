@@ -123,22 +123,27 @@ docs/                     # the four sources of truth + pre-flight discipline
     w/o `booking.confirm` rejected; owner-in-A powerless in B); B1
     atomic/concurrency/idempotency guarantees intact under RLS+FK. **F-SEC-04
     closed-by-test.**
-- **Phase B3 (messaging foundation): code COMPLETE, READY FOR SQL.** Provider-
-  agnostic `MessagingProvider` interface (`lib/messaging/`); **multi-sender**
-  (`message_senders`, keyed `(org_id, function_area)` — `stays` + `hall_catering`,
-  routed server-side; inbound routed by receiving number). `enqueue_outbound` RPC:
-  idempotent + quiet-hours-aware (defer 21:00–07:00 IST → next 07:00) + audited.
-  `ingest_inbound` RPC: replay-safe dedup + atomic tenant-scoped lead create/match.
-  Inbound route `app/api/messaging/inbound/route.ts`: HMAC-SHA256 signature auth.
+- **Phase B3 (messaging foundation): COMPLETE ✅ — verified live** on
+  `kvyhyeqwyafpizecfbnt`. Provider-agnostic `MessagingProvider` interface
+  (`lib/messaging/`); **multi-sender** (`message_senders`, keyed `(org_id,
+  function_area)` — `stays` + `hall_catering`, routed server-side; inbound routed
+  by receiving number). `enqueue_outbound` RPC: idempotent + quiet-hours-aware
+  (defer 21:00–07:00 IST → next 07:00) + audited. `ingest_inbound` RPC: replay-safe
+  dedup + atomic tenant-scoped lead create/match. Inbound route
+  `app/api/messaging/inbound/route.ts`: HMAC-SHA256 signature auth (path made
+  public in middleware — webhooks self-authenticate, no session).
   **MockProvider** records (default); **AiSensyProvider** is a shell — **live
   wiring DEFERRED to the WhatsApp/Meta session (gate)**; never call live AiSensy/
-  Meta until then. Migration `supabase/migrations/20260531150000_b3_messaging.sql`
-  WRITTEN, not applied. typecheck/lint/build green. See `docs/MESSAGING.md`.
-  - ⏳ Vicky applies B3 migration + sets `MESSAGING_WEBHOOK_SECRET`; then
-    `node scripts/b3-verify.mjs` (run with the dev server up for the inbound-auth
-    Part 3) + b2/b1 regressions prove it live.
-  - Next (after B3 verified): **B4 — scheduler / automation runtime** (cron,
-    rule executor, drains deferred outbound, SLA escalation).
+  Meta until then. See `docs/MESSAGING.md`.
+  - ✅ `scripts/b3-verify.mjs` passes twice identical (exit 0, self-cleaning, dev
+    server up): multi-sender routing (Stays→Stays, Hall→Hall), no_sender, quiet-
+    hours deferral, idempotent single-send; inbound dedup/replay → one lead,
+    unknown-number → one tenant-scoped lead, unregistered number rejected; HTTP
+    webhook forged-sig → 401, valid → 200 + lead, replay → deduped. B2/B1
+    regressions green. **A real bug was caught + fixed**: the auth middleware was
+    redirecting the webhook to /login; `/api/messaging` is now a public path.
+  - Next: **B4 — scheduler / automation runtime** (cron, rule executor, drains
+    the deferred-outbound queue, SLA escalation).
 
 ### B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")

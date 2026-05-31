@@ -11,7 +11,10 @@ import { publicEnv } from '@/lib/env';
  * is intentionally NOT done here yet — it lands with the roles-as-capabilities
  * model in B2. Keeping it out avoids baking single-tenant assumptions in now.
  */
-const PUBLIC_PATHS = ['/login', '/auth'];
+// Public paths bypass the session→/login redirect. `/api/messaging` holds
+// provider webhooks (B3): they have NO user session and self-authenticate via
+// HMAC signature, so they must NOT be bounced to the login page.
+const PUBLIC_PATHS = ['/login', '/auth', '/api/messaging'];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
