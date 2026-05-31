@@ -430,7 +430,7 @@ docs/                     # the four sources of truth + pre-flight discipline
         Form C gate (foreign w/o fields rejected, incomplete rejected, complete
         stored; domestic none); CHECKED_IN→CHECKED_OUT timestamped, non-checked-in
         rejected; shared Guest reused; org isolation; atomicity; audited.
-    - **S3 — housekeeping + room status board + maintenance: COMPLETE ✅ (migration WRITTEN, not applied; awaiting apply + verify).**
+    - **S3 — housekeeping + room status board + maintenance: COMPLETE ✅ — verified live** on kvyhyeqwyafpizecfbnt (s3-verify ×2, exit 0).
       **TWO INDEPENDENT DIMENSIONS** (modelled separately, not collapsed):
       *occupancy* DERIVED from S1 room_stays (a checked_in stay = occupied,
       never stored) + *housekeeping* STORED on the room
@@ -447,7 +447,7 @@ docs/                     # the four sources of truth + pre-flight discipline
       Rationale: same-tx atomicity+audit, write logic in one discoverable RPC, the
       codebase uses explicit RPCs (no triggers); a B4 rule would be eventual (wrong
       for an on-checkout side-effect).** Migration `20260602030000_s3_housekeeping_maintenance.sql`
-      WRITTEN, not applied. UI: /stays/housekeeping (board + turn queue + maintenance).
+      APPLIED. UI: /stays/housekeeping (board + turn queue + maintenance).
       typecheck/lint/build green. Scope: NO folio/billing or occupancy/revenue
       reporting (S4).
       - Harness `scripts/s3-verify.mjs` (run ×2): occupancy⊥housekeeping independence;
