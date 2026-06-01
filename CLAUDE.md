@@ -79,14 +79,37 @@ no shared credentials.
     query, no stored column), special dates, message templates, **manual + recurring
     outreach via the B3 firewall ONLY** (review-request + special-date rules as B4
     registry entries; cap `crm.manage`). KL-8 closed.
-  - All M-phases above **applied + verified live on `kvyhyeqwyafpizecfbnt`** —
-    each `scripts/m{1a,1b,2,3,3auto}-verify.mjs` passed ×2 identical (exit 0,
-    self-cleaning).
-  - **Next: M4** — dynamic pricing (rate-rule engine; selling price only,
-    GST-firewalled).
-- **▶ Next / not started (await go):** M4–M8 (pricing · calendar/holds · finance +
-  expense approval · inventory reorder · reporting/marketing); W6–8 channel manager;
-  Yanolja cutover; productization/billing/white-label; live AiSensy wiring.
+  - M1a–M3-auto **applied + verified live on `kvyhyeqwyafpizecfbnt`** — each
+    `scripts/m{1a,1b,2,3,3auto}-verify.mjs` passed ×2 identical (exit 0, self-cleaning).
+  - **▶ M4 — DYNAMIC PRICING (selling price only): COMPLETE ✅ pending apply+verify.**
+    Benchmarked vs **Cloudbeds PIE / Mews rate management**. One table `rate_rules`
+    (org-scoped declarative rules: subject_type room_type|hall + optional subject_id;
+    condition `always`/`date_range`/`day_of_week`/`occupancy`; adjustment `percent`
+    stacks / `absolute` = terminal override; `priority`; active). RPCs
+    `upsert_rate_rule` / `set_rate_rule_active` (cap **`pricing.manage`**) +
+    **`resolve_price`** (pure READ, member-open: applies matching active rules in
+    deterministic priority order → PRE-TAX effective selling price + an ordered
+    fired/not-fired breakdown). **THE GST FIREWALL is STRUCTURAL:** `resolve_price`
+    reads only {base, rate_rules, date, occupancy}; `resolve_gst` reads only
+    {specified_premises, supply_type} — disjoint inputs, no shared table, no call
+    edge, so neither can move the other. `resolve_price` returns NO rate/gst/tax
+    field. **base_rate is untouched** (read as an opaque pre-tax base; no exclusive↔
+    inclusive conversion — that question stays parked). NO materialized calendar, NO
+    scheduled auto-application (deferred → KL-9 / M4-auto). UI `/pricing`
+    (`components/pricing-manager.tsx`, `lib/actions/pricing.ts`). Migration
+    `supabase/migrations/20260602160000_m4_dynamic_pricing.sql` **WRITTEN, NOT
+    APPLIED**. typecheck/lint/build green. Exit harness `scripts/m4-verify.mjs`
+    (run ×2): rule applies + breakdown; deterministic stacking + terminal override;
+    conditions gate in/out (all three types); **GST firewall both directions**
+    (rule change moves price not GST rate; premises flip moves GST rate not price;
+    no tax field in output); base_rate untouched; capability gate (resolve_price
+    member-open); org isolation both directions; atomicity (negative-absolute
+    rejected → 0 rows); audited.
+  - **Next: M5** — unified availability calendar + tentative date-hold lifecycle.
+- **▶ Next / not started (await go):** M5–M8 (calendar/holds · finance + expense
+  approval · inventory reorder · reporting/marketing); M4-auto (scheduled
+  auto-repricing, KL-9); W6–8 channel manager; Yanolja cutover; productization/
+  billing/white-label; live AiSensy wiring.
 
 ## Locked decisions
 - **OP MODEL v2 governs everything** (supersedes v1.2). PN Suite NXT = ONE

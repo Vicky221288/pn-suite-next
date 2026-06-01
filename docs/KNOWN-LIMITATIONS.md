@@ -283,3 +283,33 @@ partial unique) + `set_template_purpose` config RPC — wires which template eac
 rule uses; no new table. No new cron route (existing `/api/cron/tick` drives it).
 Proven by `scripts/m3auto-verify.mjs` (×2) + B4/B3 regression. **CRM domain
 (M3 + M3-auto) closed.**
+
+---
+
+## KL-9 — M4: scheduled auto-repricing deferred (M4-auto)
+
+**Introduced:** M4 (dynamic pricing). Deliberate split — the TASK scoped v1 to
+on-demand resolution only.
+
+**What:** M4 ships the rate-rule engine (`rate_rules`) + a pure on-demand resolver
+(`resolve_price`). What it does NOT do: automatically push/materialize adjusted
+selling rates onto a schedule. There is no rate calendar materialization and no
+scheduled re-pricing — a price is computed when someone asks (preview, or a quote/
+reservation flow reading `resolve_price`), never auto-applied in the background.
+
+**Why deferred:** scheduled auto-repricing is AUTOMATION, which the codebase
+confines to the B4 rule registry (`docs/AUTOMATION.md`) — it would be a separate
+phase (M4-auto) with its own atomic, idempotent, IST-anchored, quiet-hours-aware
+registry rule + harness, exactly like M3-auto. Cramming a cron rule into M4 would
+violate the "no automation outside the registry" Hard don't and bloat the phase.
+
+**The gap:** rate changes take effect only where `resolve_price` is read at the
+moment of quoting; there is no nightly "rebuild tomorrow's rates" job and no
+materialized `rate_calendar`.
+
+**Addressed by:** a later **M4-auto** — a B4 registry rule (e.g. `rebuild_rate_calendar`
+or a per-night repricing pass) that calls the EXISTING `resolve_price` and writes
+a materialized calendar / suggested rates, atomic + idempotent + IST-anchored.
+The engine it needs already exists (`resolve_price`, `rate_rules`); M4-auto only
+adds the scheduling. The **parked base_rate exclusive↔inclusive question** is also
+NOT M4's and remains open (a separate finance decision). Neither blocks M5.

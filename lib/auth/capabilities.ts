@@ -24,6 +24,7 @@ export const CAP = {
   APPROVAL_DECIDE: 'approval.decide', // M1b — approve/reject approval requests (leave; M6 expense)
   OPS_MANAGE: 'ops.manage', // M2 — create/assign tasks, resolve incidents, manage + generate checklist templates
   CRM_MANAGE: 'crm.manage', // M3 — guest interactions/special-dates/templates + manual B3 sends + review requests
+  PRICING_MANAGE: 'pricing.manage', // M4 — manage rate rules (selling price only; resolve_price read is member-open)
 } as const;
 
 export type Capability = (typeof CAP)[keyof typeof CAP];
@@ -39,10 +40,10 @@ export function canSeeCateringCost(caps: readonly string[]): boolean {
 
 /** Display roles → their capability sets. Capabilities are what's enforced. */
 export const ROLE_CAPABILITIES: Record<string, Capability[]> = {
-  owner: [CAP.BOOKING_CONFIRM, CAP.RECORD_DELETE, CAP.PNL_VIEW_MARGIN, CAP.DISCOUNT_APPROVE, CAP.SETTLEMENT_PROCESS, CAP.ROSTER_MANAGE, CAP.STAFF_MANAGE, CAP.APPROVAL_DECIDE, CAP.OPS_MANAGE, CAP.CRM_MANAGE],
-  property_manager: [CAP.BOOKING_CONFIRM, CAP.PNL_VIEW_MARGIN, CAP.DISCOUNT_APPROVE, CAP.SETTLEMENT_PROCESS, CAP.ROSTER_MANAGE, CAP.STAFF_MANAGE, CAP.APPROVAL_DECIDE, CAP.OPS_MANAGE, CAP.CRM_MANAGE],
+  owner: [CAP.BOOKING_CONFIRM, CAP.RECORD_DELETE, CAP.PNL_VIEW_MARGIN, CAP.DISCOUNT_APPROVE, CAP.SETTLEMENT_PROCESS, CAP.ROSTER_MANAGE, CAP.STAFF_MANAGE, CAP.APPROVAL_DECIDE, CAP.OPS_MANAGE, CAP.CRM_MANAGE, CAP.PRICING_MANAGE],
+  property_manager: [CAP.BOOKING_CONFIRM, CAP.PNL_VIEW_MARGIN, CAP.DISCOUNT_APPROVE, CAP.SETTLEMENT_PROCESS, CAP.ROSTER_MANAGE, CAP.STAFF_MANAGE, CAP.APPROVAL_DECIDE, CAP.OPS_MANAGE, CAP.CRM_MANAGE, CAP.PRICING_MANAGE],
   catering_lead: [CAP.CATERING_VIEW_COST, CAP.ROSTER_MANAGE, CAP.OPS_MANAGE, CAP.CRM_MANAGE], // their domain's kitchen P&L + scheduling + ops + CRM
-  hall_manager: [CAP.ROSTER_MANAGE, CAP.OPS_MANAGE, CAP.CRM_MANAGE], // event-day + hall staffing + ops + CRM
-  stays_manager: [CAP.ROSTER_MANAGE, CAP.OPS_MANAGE, CAP.CRM_MANAGE], // front-desk / housekeeping + ops + CRM
+  hall_manager: [CAP.ROSTER_MANAGE, CAP.OPS_MANAGE, CAP.CRM_MANAGE, CAP.PRICING_MANAGE], // event-day + hall staffing + ops + CRM + hall pricing
+  stays_manager: [CAP.ROSTER_MANAGE, CAP.OPS_MANAGE, CAP.CRM_MANAGE, CAP.PRICING_MANAGE], // front-desk / housekeeping + ops + CRM + room pricing
   operative: [],
 };
