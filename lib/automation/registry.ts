@@ -29,6 +29,9 @@ const RULES: Rule[] = [
   { key: 'A2_sla_escalation', rpc: 'run_sla_escalations', cadence: 'every_tick', scope: 'per_org' },
   { key: 'A5_rent_reminders', rpc: 'run_rent_reminders', cadence: 'every_tick', scope: 'per_org' },
   { key: 'A10_today', rpc: 'build_today', cadence: 'daily_0700', scope: 'per_org' },
+  // M3-auto — CRM recurring outreach (idempotent, IST-anchored, quiet-hours-aware, B3-only)
+  { key: 'A_review_requests', rpc: 'run_review_requests', cadence: 'every_tick', scope: 'per_org' },
+  { key: 'A_special_dates', rpc: 'run_special_date_outreach', cadence: 'every_tick', scope: 'per_org' },
 ];
 
 function isDue(rule: Rule, now: Date): boolean {

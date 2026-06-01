@@ -146,3 +146,130 @@ portal process the property uses today — the suite captures, it does not trans
 with the property's registered hotel credentials, submission status tracking on
 `form_c_records` (e.g. submitted_at / acknowledgement ref), and retry handling.
 External-gated like the OTA/Yale integrations (W6–8+).
+
+---
+
+## KL-5 — M1a staff scheduling: deliberate scope trims (deferred to M1a polish / M1b)
+
+**Introduced:** M1a (staff scheduling).
+
+**What:** three intentional simplifications in the M1a scheduling slice, none of
+which is a correctness gap in the guard/lifecycle:
+1. **Assignment window is a SNAPSHOT.** `shift_assignments` copies the shift's
+   `[start_at, end_at)` at assignment time so the single-table GiST `EXCLUDE` can
+   enforce per-staff overlap. If a shift's time is later edited via `upsert_shift`,
+   existing assignments keep the OLD window (the overlap guard then reflects the
+   stale window for those rows). M1a does not re-sync assignment windows on a
+   shift-time edit.
+2. **Publish is one-way.** A roster goes `draft → published`; there is no
+   un-publish / re-open-to-draft, and shifts cannot be added/edited once published
+   (`roster_published` guard). Adding shifts to a live roster = a new draft roster
+   for that period in M1a.
+3. **No staff self-service.** `set_shift_assignment_status` (acknowledge, etc.) is
+   manager-gated (`roster.manage`); staff acknowledging their own shift from a
+   staff view is not built. Roster-published **staff notifications** are noted as a
+   future hook only — B3 messaging is deliberately NOT wired in M1a (scope guard).
+
+**Why acceptable now:** M1a's contract is "define shifts → roster → assign with a
+race-proof staff double-booking guard + a guarded status lifecycle," all of which
+is live and harness-proven (`scripts/m1a-verify.mjs`). The trims above are
+ergonomics/additive wiring, not invariant or guard gaps.
+
+**Addressed by:** the per-module UI-polish pass (program step 2) for re-sync on
+shift edit + un-publish + a staff self-service view; B3-routed roster-published
+notifications when messaging is wired. None block M1b.
+
+---
+
+## KL-6 — M1b: leave ⊥ shift-assignment cross-check is deferred
+
+**Introduced:** M1b (leave + scheduling).
+
+**What:** Approved leave (M1b `leave_requests`) and shift assignment (M1a
+`shift_assignments`) are **independent** — approving a staff member's leave does
+NOT auto-cancel/block their overlapping shift assignments, and assigning a shift
+does NOT check whether the staff member is on approved leave for that date. The
+two subsystems share the W0 `staff` entity but are not yet cross-validated.
+
+**Why acceptable now:** M1b's contract is the four pieces (HR fields, geofenced
+on-premise attendance, leave lifecycle, the generic tiered-approval primitive),
+each atomic/audited/tenant-scoped and harness-proven (`scripts/m1b-verify.mjs`).
+The cross-check is a coordination rule between two already-correct subsystems, not
+a correctness gap in either. The TASK scoped it OUT explicitly to keep M1b a clean
+increment. The staff double-booking guard (M1a GiST EXCLUDE) and the leave
+approval guard both stand on their own.
+
+**The gap:** a manager could assign a shift to someone on approved leave (or
+approve leave that overlaps already-assigned shifts) with no warning or block.
+
+**Addressed by:** a later workforce-coordination pass (per-module UI-polish, or a
+small follow-up) — e.g. `assign_shift` consults approved-leave windows for the
+staff/date, and `decide_leave` (on approve) flags/optionally releases overlapping
+`shift_assignments`. Cleanly implementable on the existing tables (both carry
+`staff_id` + a date/time range); deferred, not blocked. Does not block M2.
+
+---
+
+## KL-7 — M2: no SLA auto-escalation on tasks/incidents (B4 registry territory)
+
+**Introduced:** M2 (ops execution).
+
+**What:** M2 tasks and incidents carry priority/severity, due dates, and guarded
+status lifecycles, but there is **no automated SLA escalation** — an overdue task
+or an unresolved high-severity incident does not auto-notify, auto-reassign, or
+auto-raise priority. The benchmark (Quore/HotSOS) has SLA timers; M2 captures the
+data, not the timer.
+
+**Why acceptable now:** M2's contract is the three ops domains (tasks, incidents,
+checklist templates) with atomic/audited/tenant-scoped writes and guarded
+lifecycles — all harness-proven (`scripts/m2-verify.mjs`). SLA escalation is
+explicitly **automation**, which the codebase confines to the B4 rule registry
+(`docs/AUTOMATION.md`) — it is NOT an M2 RPC. Adding it here would violate the
+"no automation outside the registry" Hard don't.
+
+**The gap:** overdue/unresolved items rely on a human watching the board; there is
+no timed nudge.
+
+**Addressed by:** a later B4 registry entry (atomic, idempotent, IST-anchored,
+quiet-hours-aware) — e.g. `run_ops_sla` that flags overdue tasks / aging
+high-severity incidents and notifies via B3 (when messaging is wired). A registry
+rule + an entry, not an M2 change. The existing `tasks.due_date` /
+`incidents.severity` + `status` columns already carry everything such a rule needs.
+Does not block M3.
+
+---
+
+## KL-8 — M3-auto: recurring CRM outreach rules deferred (review-request + special-date)
+
+**Introduced:** M3 (Guest CRM enrichment). Deliberate split, M1a→M1b style.
+
+**What:** M3 shipped the CRM data layer (interactions, special dates, message
+templates), live LTV, the **manual** "send template to guest now" action, and
+**review_requests records**. The two RECURRING / time-triggered outreach behaviours
+are NOT yet built:
+1. **Review-request outreach** — on event-concluded (A7), auto-create + send a
+   review request once per concluded event.
+2. **Special-date outreach** — daily, find guests whose anniversary/birthday
+   (month/day) matches today and send the configured template, idempotent per
+   (guest, special_date, year).
+
+**Why split out (not crammed into M3):** both are AUTOMATION, which the codebase
+confines to the B4 rule registry (`docs/AUTOMATION.md`) — "adding a rule = an
+entry," but each of these carries real logic (concluded-event scanning + per-event
+dedup; date-matching + per-year idempotency) and its own B4-style harness surface
+(prove fires-once, idempotent re-tick → 0, IST-anchored, quiet-hours-aware, via
+B3). Two such rules together would bloat M3. The TASK explicitly invited this
+judgment call and the clean split. M3's data layer + manual send + review records
+are self-contained and fully harness-proven without them.
+
+**The gap:** outreach is manual-trigger only today; no automatic post-event review
+nudge and no automatic anniversary/birthday greeting.
+
+**Addressed by:** a follow-on phase **M3-auto** — two B4 registry rules
+(atomic, idempotent, IST-anchored, quiet-hours-aware), each sending via B3
+`enqueue_outbound` and writing through `review_requests` / `outbound_messages`.
+Everything they need already exists: `review_requests` (per-event dedup),
+`guest_special_dates` (the recurrence source), `message_templates` +
+`message_senders` (the send config), and the proven B4 registry + `drain_outbound`.
+Build like B4 (A2/A5): a registry entry + an RPC + a `scripts/m3auto-verify.mjs`.
+Does not block M4.

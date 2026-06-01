@@ -1,11 +1,16 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getRoleContext } from '@/lib/auth/context';
+import { CAP } from '@/lib/auth/capabilities';
+import { getGuestLtv } from '@/lib/actions/crm';
 import { MergeGuestButton } from '@/components/merge-guest-button';
+import { GuestCrm } from '@/components/guest-crm';
 
-/** Guest detail + merge candidates (other ACTIVE guests sharing this phone). */
+/** Guest detail + CRM enrichment (timeline, special dates, live LTV, B3 send). */
 export default async function GuestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const ctx = await getRoleContext();
   const supabase = await createClient();
   const { data: g } = await supabase.from('guests').select('*').eq('id', id).maybeSingle();
   if (!g) notFound();
@@ -13,6 +18,14 @@ export default async function GuestDetailPage({ params }: { params: Promise<{ id
   // family/duplicate candidates: other active guests on the same phone
   const { data: sharers } = await supabase
     .from('guests').select('id, name').eq('phone', g.phone).eq('status', 'active').neq('id', id);
+
+  const [{ data: interactions }, { data: specialDates }, { data: templates }, { data: reviews }, ltv] = await Promise.all([
+    supabase.from('guest_interactions').select('id, interaction_type, channel, note, occurred_at').eq('guest_id', id).order('occurred_at', { ascending: false }).limit(50),
+    supabase.from('guest_special_dates').select('id, date_type, the_date, label').eq('guest_id', id).order('the_date'),
+    supabase.from('message_templates').select('id, name, function_area, channel, body').eq('active', true).order('name'),
+    supabase.from('review_requests').select('id, event_id, status, requested_at').eq('guest_id', id).order('created_at', { ascending: false }),
+    getGuestLtv(id),
+  ]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -48,6 +61,16 @@ export default async function GuestDetailPage({ params }: { params: Promise<{ id
           Merge only when they&apos;re truly the same person — family members on one phone should stay distinct.
         </p>
       </section>
+
+      <GuestCrm
+        guestId={id}
+        interactions={(interactions ?? []) as never}
+        specialDates={(specialDates ?? []) as never}
+        templates={(templates ?? []) as never}
+        reviews={(reviews ?? []) as never}
+        ltv={(ltv.ok ? ltv.data : { can_see: false, ltv: null }) as never}
+        canManage={(ctx?.capabilities ?? []).includes(CAP.CRM_MANAGE)}
+      />
     </div>
   );
 }
