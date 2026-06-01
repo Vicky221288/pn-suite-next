@@ -32,6 +32,8 @@ const RULES: Rule[] = [
   // M3-auto — CRM recurring outreach (idempotent, IST-anchored, quiet-hours-aware, B3-only)
   { key: 'A_review_requests', rpc: 'run_review_requests', cadence: 'every_tick', scope: 'per_org' },
   { key: 'A_special_dates', rpc: 'run_special_date_outreach', cadence: 'every_tick', scope: 'per_org' },
+  // M5 — expire lapsed tentative date holds (belt to the read-filter suspenders; idempotent)
+  { key: 'A_hold_expiry', rpc: 'run_hold_expiry', cadence: 'every_tick', scope: 'per_org' },
 ];
 
 function isDue(rule: Rule, now: Date): boolean {

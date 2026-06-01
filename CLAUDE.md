@@ -105,11 +105,36 @@ no shared credentials.
     no tax field in output); base_rate untouched; capability gate (resolve_price
     member-open); org isolation both directions; atomicity (negative-absolute
     rejected → 0 rows); audited.
-  - **Next: M5** — unified availability calendar + tentative date-hold lifecycle.
-- **▶ Next / not started (await go):** M5–M8 (calendar/holds · finance + expense
-  approval · inventory reorder · reporting/marketing); M4-auto (scheduled
-  auto-repricing, KL-9); W6–8 channel manager; Yanolja cutover; productization/
-  billing/white-label; live AiSensy wiring.
+  - **▶ M5 — DATE HOLDS + AVAILABILITY CALENDAR: COMPLETE ✅ pending apply+verify.**
+    Benchmarked vs **Oracle OPERA / Cloudbeds calendar**. Table `date_holds` (soft,
+    advisory, expiring; polymorphic hall|stays subject; **NO GiST EXCLUDE / NO
+    overlap-unique** → holds never block holds or confirms). RPCs `place_hold` /
+    `release_hold` / `convert_hold` (cap **`hold.manage`**) + `availability_calendar`
+    (member-open READ) + B4 registry rule **`run_hold_expiry`** (`A_hold_expiry`,
+    per-org/every-tick). **THE HOLD/GiST SEAM is STRUCTURAL:** a hold creates no
+    `date_blocks`/`room_stays` row, so the B1/S1 GiST EXCLUDE never sees it; the
+    ONLY mutation to `converted` is `convert_hold`, which **delegates** to the
+    existing `confirm_booking` / `create_room_stay` — GiST decides, and a conflict
+    (23P01) rolls back the convert leaving the hold pending (zero orphan, F-DATA-01
+    stays closed). **EXPIRY belt-and-suspenders:** mandatory `expires_at` + every
+    read filters `expires_at > now()` (correctness independent of the sweep) + the
+    idempotent `run_hold_expiry` sweep. UI `/calendar` (`components/holds-calendar.tsx`,
+    `lib/actions/holds.ts`). Migration
+    `supabase/migrations/20260602170000_m5_date_holds_calendar.sql` **WRITTEN, NOT
+    APPLIED**. typecheck/lint/build green. Exit harness `scripts/m5-verify.mjs`
+    (run ×2): hold created (no GiST row); two holds coexist; hold doesn't block a
+    confirm; convert delegates → real booking/stay; conflicting convert rejected by
+    GiST + hold unchanged (zero orphan); lapsed hold ignored by reads pre-sweep then
+    swept (idempotent); release + guarded transitions; calendar composes confirmed +
+    active holds (converted/expired excluded); stays delegate (success + GiST
+    conflict); capability gates (incl. hold.manage-without-booking.confirm can't
+    convert a hall hold); org isolation both directions; atomicity; audited.
+    **B4/B3 regression run alongside — `run_hold_expiry` only ADDS a registry entry.**
+  - **Next: M6** — finance back-office (expense ledger + tiered approval + ageing).
+- **▶ Next / not started (await go):** M6–M8 (finance + expense approval ·
+  inventory reorder · reporting/marketing); M4-auto (scheduled auto-repricing,
+  KL-9); W6–8 channel manager; Yanolja cutover; productization/billing/white-label;
+  live AiSensy wiring.
 
 ## Locked decisions
 - **OP MODEL v2 governs everything** (supersedes v1.2). PN Suite NXT = ONE

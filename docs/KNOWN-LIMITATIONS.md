@@ -313,3 +313,32 @@ a materialized calendar / suggested rates, atomic + idempotent + IST-anchored.
 The engine it needs already exists (`resolve_price`, `rate_rules`); M4-auto only
 adds the scheduling. The **parked base_rate exclusive↔inclusive question** is also
 NOT M4's and remains open (a separate finance decision). Neither blocks M5.
+
+---
+
+## KL-10 — M5: availability calendar is read-only aggregation (no materialization / no auto-release-on-confirm)
+
+**Introduced:** M5 (date holds + availability calendar).
+
+**What:** M5 ships the tentative-hold lifecycle + a read-only `availability_calendar`
+that composes confirmed bookings/stays + active holds on demand. Two deliberate trims:
+1. **No materialized availability** — the calendar is computed per request over the
+   given range; there is no cached/materialized day-grid. Fine at PN's scale; a
+   future perf pass could materialize if ranges get large.
+2. **A hold is not auto-released when its slot is independently confirmed.** A hold
+   and a confirmed booking can coexist (the hold is advisory); a converted hold is
+   excluded from active holds, but a *pending* hold whose slot someone else
+   confirmed directly lingers until it expires (or is released). This is by design
+   (holds are advisory paint; the GiST is the authority) — not a correctness gap.
+   Its `convert_hold` would simply fail at GiST (zero orphan), and the read-filter +
+   `run_hold_expiry` clear it on lapse.
+
+**Why acceptable now:** M5's contract — advisory holds that never block/become a
+booking except via the delegating `convert_hold`, expiry independent of the sweep,
+and a composed availability read — is fully met and harness-proven
+(`scripts/m5-verify.mjs`). The trims are ergonomics/perf, not invariant gaps.
+
+**Addressed by:** a later UI-polish / perf pass (materialized day-grid if needed)
+and, optionally, a small `convert_hold`/`confirm_booking` courtesy that releases
+sibling pending holds on the same slot. The data already supports both. Does not
+block M6. (OTA/channel availability overlay remains W6–8, not here.)
