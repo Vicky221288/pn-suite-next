@@ -458,6 +458,138 @@ wiring; photo_ref is captured now). Reuse-divergences flagged above.
 
 ---
 
+## MODULE MIGRATION WAVE (M1a–M8) — sequence LOCKED
+Plan: `docs/PN-Module-Migration-Wave-Plan.md` (16 legacy modules = 4 DONE / 5
+PARTIAL / 7 GAP; sequence M1a → M1b → M2 → M3 → M4 → M5 → M6 → M7 → M8,
+benchmarked, not re-skinned). **M1a–M3-auto are APPLIED + VERIFIED LIVE on
+`kvyhyeqwyafpizecfbnt`** — each proven by a self-cleaning, exit-coded harness run
+×2 identical. M4–M8 not started.
+
+### M1a — staff scheduling: COMPLETE ✅
+Port of the legacy Shifts module, benchmarked vs **Deputy / 7shifts**. Reuses W0
+`staff` (no parallel person record) + the W2 `event_staff` roster PATTERN,
+generalized to calendar shifts. Tables: `shift_templates` (recurring;
+days_of_week 0–6), `staff_rosters` (draft→published), `shifts` (concrete; IST
+wall-clock window; idempotent template expansion), `shift_assignments` (lifecycle
+scheduled→acknowledged→completed + cancelled/no_show; **THE GUARD** = B1/S1 GiST
+`EXCLUDE (org_id =, staff_id =, tstzrange(start_at,end_at,'[)') &&) where status in
+active` → no overlapping staff double-booking; half-open ⇒ adjacent allowed;
+cancelled/no_show free the slot). RPCs: `upsert_shift_template`, `create_roster`,
+`generate_shifts_from_template`, `upsert_shift`, `publish_roster`, `assign_shift`,
+`set_shift_assignment_status`, `roster_board` (read; draft hidden from non-managers).
+Manager capability **`roster.manage`** gates every write. UI `/scheduling`. Migration
+`20260602110000_m1a_staff_scheduling.sql` (+ fix `20260602113000_m1a_fix_oncflict.sql`:
+the `generate_shifts_from_template` ON CONFLICT needed the partial-index predicate
+`where template_id is not null` to match `uq_shift_template_date`). Deferrals → KL-5.
+Harness `scripts/m1a-verify.mjs` (×2): template→2 shifts/7-day window + idempotent
+re-gen; assign + guarded lifecycle (illegal txn rejected); overlap REJECTED /
+adjacent allowed / cancelled+no_show free; atomicity (rejected overlap = 0 partial
+rows); draft hidden from operative, visible after publish; shared W0 staff reused;
+capability gate; org isolation both directions; audited. Scope guards: NO
+attendance/geofence, NO leave/HR, NO approval, NO payroll, NO messaging.
+
+### M1b — attendance + leave + HR + GENERIC tiered-approval: COMPLETE ✅
+Benchmarked vs **greytHR / Connecteam**. Reuses W0 `staff` (HR fields ALTER, no
+parallel person). **(A) HR fields** — `staff` gains `employee_code` (org-unique),
+`date_of_joining`, `designation`, `employment_type`
+(full_time/part_time/contract/temporary), `email`; RPC `set_hr_fields` (cap
+`staff.manage`). NO payroll/pay/salary. **(B) Geofenced on-premise attendance
+(DPDP)** — `attendance_geofences` (per-org property centre+radius, manager-set,
+never a PN literal) + `attendance_records` (`on_premise` boolean + timestamp +
+optional M1a `shift_id`) — **NO lat/long column anywhere**; the DEVICE evaluates
+the fence (`lib/geo.ts` `withinGeofence`) and sends ONLY the boolean
+(`record_attendance`); raw coordinates never reach nor persist on the server.
+`set_geofence` (cap `staff.manage`). **(C) Leave** — `leave_requests`
+(request→pending→approved/rejected, guarded, audited); `request_leave` (open to
+members; first consumer of the primitive) + `decide_leave` (cap `approval.decide`;
+syncs leave status). **(D) GENERIC tiered-approval primitive** — `approval_requests`
+(**polymorphic `(request_type, subject_id)` — NO leave_id FK**, so M6 plugs in
+`request_type='expense'` unchanged) + `approval_decisions` (distinct per-approver,
+no double-vote); `submit_approval_request` (open) + `decide_approval` (cap
+`approval.decide`; anti-self-approval; `required_approvals` tiers → approved; reject
+terminal; guarded from pending). New caps `staff.manage` + `approval.decide`. UI
+`/staff`. Migration `20260602120000_m1b_attendance_leave_approval.sql`. Deferral →
+KL-6 (leave↔shift-assignment cross-check). Harness `scripts/m1b-verify.mjs` (×2):
+HR on same staff row (no dup); geofence per-org + on_premise true/false + **NO
+coordinate column persisted**; leave approve+reject guarded (illegal txn rejected);
+primitive polymorphic (no leave_id col) + multi-tier + distinct-approver +
+anti-self-approval; approver capability gate; org isolation both directions;
+atomicity (required_approvals=0 → leave insert rolls back with the approval insert,
+zero partial rows); audited.
+
+### M2 — ops execution (tasks + incidents + checklist-TEMPLATE engine): COMPLETE ✅
+Benchmarked vs **Quore / Amadeus HotSOS · Xenia**. **(A) Tasks** — `tasks`
+(create→assign→guarded open→in_progress→done +cancelled, priority, due_date,
+assignee = W0 `staff`) with a **POLYMORPHIC** spine link `(entity_type, entity_id)`
+— no FK soup, both-or-neither CHECK, validated via `pn_entity_exists` over
+event/room/room_stay/booking. RPCs `create_task`/`assign_task`/`set_task_status`.
+**(B) Incidents** — `incidents` (distinct domain: report→in_progress→resolved
++cancelled, severity, resolution + resolved_at, same polymorphic link), generalizing
+the S3 maintenance shape; `report_incident` (open to any member) +
+`set_incident_status` (cap). **(C) Checklist-TEMPLATE engine — REUSE SEAM:**
+`checklist_templates` + `checklist_template_items` (the template layer Module 7
+lacked) + a provenance `event_checklists.template_id` ALTER (the ONLY touch to
+execution tables); `generate_checklist_from_template` emits a W2 execution checklist
+**INTO the existing `event_checklists`/`event_checklist_items`** — NO new execution
+table, NO re-implemented completion/photo-proof; completion stays on the UNCHANGED
+W2 `complete_checklist_item` (KL-3 Storage photo-proof intact). New cap **`ops.manage`**
+gates create/assign/resolve/template work; reporting an incident is open to members.
+UI `/ops`. Migration `20260602130000_m2_ops_execution.sql`. Deferral → KL-7 (no SLA
+auto-escalation; a later B4 registry entry). Harness `scripts/m2-verify.mjs` (×2):
+task create→assign→guarded lifecycle + polymorphic link resolves + dangling/
+unknown-type rejected; incident report (operative allowed)→guarded resolve +
+severity, distinct table; template GENERATES into `event_checklists`/`_items` w/
+template_id provenance, requires_photo carried, **W2 completion + KL-3 photo-proof
+gate intact**, **NO parallel execution table**; capability gates; org isolation;
+atomicity (null-label item → delete+reinsert rolls back together); audited.
+
+### M3 — Guest CRM enrichment: COMPLETE ✅
+Benchmarked vs **Revinate / Salesforce Hospitality**. All on the SHARED W0 `guests`
+entity (invariant #7). **(A) Interactions** — `guest_interactions` timeline
+(`log_interaction`). **(B) LTV computed LIVE** — `guest_ltv` read RPC sums
+`finance_ledger` credit revenue (hall/stays/catering) for invoices resolving to the
+guest via event/stay (invariant #10: a QUERY, **no stored ltv column**); gated by
+`pnl.view_margin`. **(C) Special dates** — `guest_special_dates` (`set_special_date`,
+data only). **(D) Templates** — `message_templates` (org config; `function_area`
+routes the B3 sender; `{{placeholder}}` body) + `pn_render_template`;
+`upsert_message_template`. **(E) Sending — STRICT B3 FIREWALL:**
+`send_template_to_guest` (manual, now) + `create_review_request` (records
+`review_requests` + sends) route through the B3 `enqueue_outbound` **ONLY**
+(idempotent + quiet-hours-aware; per-(org,function_area) sender) — no new send path,
+no wa.me. New cap **`crm.manage`** gates CRM writes + sends. UI: enriched
+`/guests/[id]` + `/crm` template manager. Migration `20260602140000_m3_guest_crm.sql`.
+**SPLIT (M1a→M1b discipline):** the two recurring outreach rules deferred to M3-auto
+(KL-8). Harness `scripts/m3-verify.mjs` (×2): interactions on same W0 guest (no dup)
++ ordered; LTV live (hall→100k, +stays→150k) + **no ltv column** + gated; special
+dates store/upsert; placeholder render; **B3 firewall** — send lands in
+`outbound_messages`, idempotent, quiet-hours deferral, **no parallel send table**;
+review_requests recorded + idempotent per (guest,event); capability gates; org
+isolation; atomicity (no-sender → review record rolls back); audited.
+
+### M3-auto — recurring CRM outreach (two B4 registry rules): COMPLETE ✅ — CRM DOMAIN CLOSED (KL-8)
+Two rules deferred from M3, as declarative B4-registry entries (`A_review_requests`,
+`A_special_dates`) + atomic, idempotent, IST-anchored, quiet-hours-aware rule RPCs
+sending via B3 — same shape as `run_sla_escalations`. **`run_review_requests`**
+(per-org, every tick): each CONCLUDED event (`event_date < today_IST` AND `guest_id`
+present AND not cancelled) with no review request → reuses M3 `create_review_request`;
+per-event dedup via the M3 `review_requests` uniqueness → re-tick = 0.
+**`run_special_date_outreach`** (per-org, every tick): each `guest_special_dates`
+whose month/day = today (IST) → sends the matching template; **per-year idempotency
+via the B3 key `special:<type>:<guest>:<YYYY>`** (no marker table). Both send ONLY
+via `enqueue_outbound` (deferred drains via `drain_outbound`); per-entity
+subtransactions isolate a bad recipient. **REUSE-ONLY schema:** nullable
+`message_templates.purpose` + per-(org,purpose) partial unique + `set_template_purpose`
+config RPC (cap `crm.manage`); template-manager UI gains a purpose selector. NO new
+cron route (existing `/api/cron/tick` drives it). Migration
+`20260602150000_m3auto_outreach_rules.sql`. Harness `scripts/m3auto-verify.mjs` (×2):
+review concluded→1/re-tick→0/future→0 + B3 enqueue to right recipient; special-date
+match→1/re-tick→0/non-match→0/next-year→1 + **IST anchoring** (a Jun-15 date fires
+under IST when UTC is still Jun-14, Jun-14 control does not); quiet-hours defer→drain;
+registry-driven (+ cron auth when exercised); per-entity isolation; org isolation;
+audited. B4/B3 regression green (new rules only ADD registry entries).
+
+---
+
 ## B0.6 token adjustments (logged for transparency)
 The contrast checker (authorized by tokens.css §CONTRAST-NOTES "adjust if <4.5:1")
 darkened two status colors and brightened dark-mode brand text so all pairs pass
