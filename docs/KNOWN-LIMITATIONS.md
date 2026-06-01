@@ -239,9 +239,10 @@ Does not block M3.
 
 ---
 
-## KL-8 — M3-auto: recurring CRM outreach rules deferred (review-request + special-date)
+## KL-8 — M3-auto: recurring CRM outreach rules — ✅ CLOSED (pending apply+verify)
 
 **Introduced:** M3 (Guest CRM enrichment). Deliberate split, M1a→M1b style.
+**Closed:** M3-auto (`20260602150000_m3auto_outreach_rules.sql`) — both rules built.
 
 **What:** M3 shipped the CRM data layer (interactions, special dates, message
 templates), live LTV, the **manual** "send template to guest now" action, and
@@ -265,11 +266,20 @@ are self-contained and fully harness-proven without them.
 **The gap:** outreach is manual-trigger only today; no automatic post-event review
 nudge and no automatic anniversary/birthday greeting.
 
-**Addressed by:** a follow-on phase **M3-auto** — two B4 registry rules
-(atomic, idempotent, IST-anchored, quiet-hours-aware), each sending via B3
-`enqueue_outbound` and writing through `review_requests` / `outbound_messages`.
-Everything they need already exists: `review_requests` (per-event dedup),
-`guest_special_dates` (the recurrence source), `message_templates` +
-`message_senders` (the send config), and the proven B4 registry + `drain_outbound`.
-Build like B4 (A2/A5): a registry entry + an RPC + a `scripts/m3auto-verify.mjs`.
-Does not block M4.
+**✅ CLOSED — `20260602150000_m3auto_outreach_rules.sql`** (WRITTEN, not applied).
+Two B4-registry rules, atomic + idempotent + IST-anchored + quiet-hours-aware,
+sending ONLY via B3 `enqueue_outbound`, with per-entity subtransactions:
+- **`run_review_requests`** (registry `A_review_requests`) — CONCLUDED event
+  (`event_date < today_IST` AND has guest AND not cancelled) with no review request
+  → reuses M3 `create_review_request` (record + B3 send). Per-event dedup via the
+  M3 `review_requests` unique (org,guest,event) → re-tick = 0.
+- **`run_special_date_outreach`** (registry `A_special_dates`) — `guest_special_dates`
+  whose month/day = today (IST) → send the matching template (chosen by
+  `message_templates.purpose = date_type`). **Per-year idempotency via the B3 key
+  `special:<type>:<guest>:<YYYY>`** (no marker table — reuses `outbound_messages`
+  idempotency).
+Reuse-only schema: `message_templates.purpose` (nullable + per-(org,purpose)
+partial unique) + `set_template_purpose` config RPC — wires which template each
+rule uses; no new table. No new cron route (existing `/api/cron/tick` drives it).
+Proven by `scripts/m3auto-verify.mjs` (×2) + B4/B3 regression. **CRM domain
+(M3 + M3-auto) closed.**

@@ -195,11 +195,40 @@ no shared credentials.
       (no-sender → review record rolls back, zero partial rows); audited. Scope
       guards held: NO stored LTV, NO direct/wa.me send (B3 only), NO live AiSensy,
       NO M4 scope.
-  - **Next:** **M3-auto** (the two B4-registry outreach rules) OR **M4** (dynamic
-    pricing) — per Vicky's call — after apply+verify of M3.
-- **▶ Next / not started (await go):** M3-auto (deferred outreach rules, KL-8);
-  rest of module migration (M4–M8); W6–8 channel manager; Yanolja cutover;
-  productization/billing/white-label; live AiSensy wiring.
+  - **M3-auto — recurring CRM outreach (two B4 registry rules): COMPLETE ✅ pending
+    apply+verify. CRM DOMAIN CLOSED (KL-8 closed).** The two rules deferred from
+    M3, built as declarative B4-registry entries (`A_review_requests`,
+    `A_special_dates` in `lib/automation/registry.ts`) + atomic, idempotent,
+    IST-anchored, quiet-hours-aware rule RPCs sending via B3 — same shape as
+    `run_sla_escalations`. **`run_review_requests`** (per-org, every tick): for each
+    CONCLUDED event (`event_date < today_IST` AND `guest_id` present AND not
+    cancelled) with no review request, reuses M3 `create_review_request` (record +
+    B3 send); per-event dedup via the M3 `review_requests` uniqueness → re-tick = 0.
+    **`run_special_date_outreach`** (per-org, every tick): for each
+    `guest_special_dates` whose month/day = today (IST), sends the matching
+    template; **per-year idempotency via the B3 key `special:<type>:<guest>:<YYYY>`**
+    (year embedded) — re-tick same day = 0, next year = 1; no marker table. Both
+    send ONLY via `enqueue_outbound` (quiet-hours-deferred sends drain via
+    `drain_outbound`); per-entity subtransactions isolate a bad recipient. **REUSE-ONLY
+    schema:** one nullable `message_templates.purpose` column + per-(org,purpose)
+    partial unique (wires which template each rule uses; no new table) +
+    `set_template_purpose` config RPC (cap `crm.manage`); template-manager UI gains
+    a purpose selector. NO new cron route (existing `/api/cron/tick` drives it).
+    Migration `supabase/migrations/20260602150000_m3auto_outreach_rules.sql`
+    **WRITTEN, NOT APPLIED**. typecheck/lint/build green. Exit harness
+    `scripts/m3auto-verify.mjs` (run ×2): review concluded→1/re-tick→0/future→0 +
+    B3 enqueue to right recipient; special-date match→1/re-tick→0/non-match→0/next
+    year→1 + **IST anchoring** (a Jun-15 date fires under IST when UTC is still
+    Jun-14, and the Jun-14 control does not); quiet-hours defer→drain; registry-driven
+    (+ cron-route auth when exercised); per-entity isolation (bad no-sender entity
+    fails alone, sibling still sends); org isolation both directions; audited.
+    **B4/B3 regression run alongside (b4-verify ×2 + b3-verify) — the new rules
+    only ADD registry entries; existing rules untouched.**
+  - **Next:** **M4** — dynamic pricing (rate-rule engine; selling price only,
+    GST-firewalled) — after apply+verify of M3-auto.
+- **▶ Next / not started (await go):** rest of module migration (M4–M8); W6–8
+  channel manager; Yanolja cutover; productization/billing/white-label; live
+  AiSensy wiring.
 
 ## Locked decisions
 - **OP MODEL v2 governs everything** (supersedes v1.2). PN Suite NXT = ONE
