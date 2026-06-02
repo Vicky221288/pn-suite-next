@@ -81,7 +81,7 @@ no shared credentials.
     registry entries; cap `crm.manage`). KL-8 closed.
   - M1a–M3-auto **applied + verified live on `kvyhyeqwyafpizecfbnt`** — each
     `scripts/m{1a,1b,2,3,3auto}-verify.mjs` passed ×2 identical (exit 0, self-cleaning).
-  - **▶ M4 — DYNAMIC PRICING (selling price only): COMPLETE ✅ pending apply+verify.**
+  - **✅ M4 — DYNAMIC PRICING (selling price only): COMPLETE — applied + verified live (m4-verify ×2).**
     Benchmarked vs **Cloudbeds PIE / Mews rate management**. One table `rate_rules`
     (org-scoped declarative rules: subject_type room_type|hall + optional subject_id;
     condition `always`/`date_range`/`day_of_week`/`occupancy`; adjustment `percent`
@@ -105,7 +105,7 @@ no shared credentials.
     no tax field in output); base_rate untouched; capability gate (resolve_price
     member-open); org isolation both directions; atomicity (negative-absolute
     rejected → 0 rows); audited.
-  - **▶ M5 — DATE HOLDS + AVAILABILITY CALENDAR: COMPLETE ✅ pending apply+verify.**
+  - **✅ M5 — DATE HOLDS + AVAILABILITY CALENDAR: COMPLETE — applied + verified live (m5-verify ×2).**
     Benchmarked vs **Oracle OPERA / Cloudbeds calendar**. Table `date_holds` (soft,
     advisory, expiring; polymorphic hall|stays subject; **NO GiST EXCLUDE / NO
     overlap-unique** → holds never block holds or confirms). RPCs `place_hold` /
@@ -130,7 +130,7 @@ no shared credentials.
     conflict); capability gates (incl. hold.manage-without-booking.confirm can't
     convert a hall hold); org isolation both directions; atomicity; audited.
     **B4/B3 regression run alongside — `run_hold_expiry` only ADDS a registry entry.**
-  - **▶ M6 — FINANCE BACK-OFFICE: COMPLETE ✅ pending apply+verify.** Benchmarked
+  - **✅ M6 — FINANCE BACK-OFFICE: COMPLETE — applied + verified live (m6-verify ×2).** Benchmarked
     vs **Zoho Books/Expense · SAP Concur**. Tables `expense_categories` + `expenses`
     (payee = W1d `vendors` reuse; `supply_type`/`input_gst_amount` are DATA tags
     only). **(A) Expense ledger** — on approval the expense POSTS a DEBIT to the
@@ -158,8 +158,8 @@ no shared credentials.
     ageing buckets + coalesce + paid-drops-out + money gating; capability gates; org
     isolation both directions; atomicity (required_approvals=0 → expense rolls back
     to draft); audited.
-  - **▶ M7 — INVENTORY REORDER + PROCUREMENT AUTOMATION: COMPLETE ✅ pending
-    apply+verify.** Benchmarked vs **MarketMan / Apicbase** (threshold reorder; no
+  - **✅ M7 — INVENTORY REORDER + PROCUREMENT AUTOMATION: COMPLETE — applied +
+    verified live (m7-verify ×2).** Benchmarked vs **MarketMan / Apicbase** (threshold reorder; no
     ML forecast). Mostly B4-registry wiring over W0 inventory + W1d purchasing.
     **Config:** `inventory_items.reorder_point` made NULLABLE (NULL = NOT monitored;
     legacy default-0 backfilled → NULL = opt-in) + new `reorder_qty`;
@@ -182,8 +182,8 @@ no shared credentials.
     (day) / deferred (night); capability gate; org isolation both directions;
     atomicity (qty 0 rejected, unchanged); audited.
     **B4/B3 regression run alongside — A_reorder only ADDS a registry entry.**
-  - **▶ M8 — REPORTING + MARKETING LEAF (final sub-phase): COMPLETE ✅ pending
-    apply+verify.** Benchmarked vs **Oracle OPERA reporting / Revinate Marketing**.
+  - **✅ M8 — REPORTING + MARKETING LEAF (final sub-phase): COMPLETE — applied +
+    verified live (m8-verify ×2).** Benchmarked vs **Oracle OPERA reporting / Revinate Marketing**.
     The leaf — reads what every prior phase wrote. **(A) `consolidated_pnl`** — pure
     READ over the ONE `finance_ledger`: revenue credits − expense debits (incl. M6)
     by source_domain (hall/stays/catering/core); NO stored P&L (invariant #10);
@@ -210,10 +210,11 @@ no shared credentials.
     gated; marketing (lead source + conversions + campaign tie + LED → existing
     ledger, no parallel ledger); capability gates; org isolation both directions;
     atomicity (negative LED → 0 rows); audited.
-  - **🎉 MODULE-MIGRATION WAVE (M1a–M8) STRUCTURALLY COMPLETE pending apply+verify.**
-    16 legacy modules now re-expressed on the shared spine (4 were already DONE pre-wave;
-    M1a–M8 closed the 5 PARTIAL + 7 GAP). Wave-complete stamp lands once Vicky applies
-    M8 + `scripts/m8-verify.mjs` passes ×2.
+  - **🎉 MODULE-MIGRATION WAVE (M1a–M8) COMPLETE — applied + verified live on
+    `kvyhyeqwyafpizecfbnt`** (each `scripts/m{1a,1b,2,3,3auto,4,5,6,7,8}-verify.mjs`
+    passed ×2 identical, exit 0, self-cleaning). 16 legacy modules now re-expressed
+    on the shared spine (4 were already DONE pre-wave; M1a–M8 closed the 5 PARTIAL +
+    7 GAP).
 - **▶ Next / not started (await go):** M4-auto (scheduled auto-repricing, KL-9);
   per-module UI-polish pass (program step 2); W6–8 channel manager; Yanolja cutover;
   productization/billing/white-label; live AiSensy wiring.
