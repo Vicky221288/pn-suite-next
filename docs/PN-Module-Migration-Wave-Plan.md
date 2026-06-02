@@ -600,8 +600,9 @@ half). Second workforce increment; depends on M1a.*
 
 ---
 
-### M8 — Reporting + marketing leaf (consolidated P&L · GST-return · campaigns · LED · lead-source)
+### M8 — Reporting + marketing leaf (consolidated P&L · GST-return · campaigns · LED · lead-source) — ✅ COMPLETE (pending apply+verify; migration `20260602200000_m8_reporting_marketing.sql`)
 *Covers Module 16 (GAP) + Module 5 (PARTIAL — consolidated reports/GST-return).*
+*Built: `consolidated_pnl` / `gst_return_report` (firewall: reads resolve_gst output, never recomputes) / `ar_ageing_by_customer` (closes KL-11) / `campaigns` + `leads.campaign_id` + `led_bookings` (LED revenue → existing finance_ledger) / `upsert_campaign` / `set_lead_source` / `lead_source_report` / `record_ad_revenue`. **M1a–M8 module-migration wave structurally complete.***
 
 - **Scope:** the **leaf consumer**, migrated last because it reads from every
   other domain — a consolidated cross-domain **P&L** (a query over the one ledger),

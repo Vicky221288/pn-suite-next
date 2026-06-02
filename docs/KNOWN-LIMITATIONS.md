@@ -357,9 +357,10 @@ over `invoices`. Deliberately NOT built:
    GL is out of scope (and not needed at PN's scale).
 2. **No bank reconciliation / no payment execution / no payment rails.**
    `mark_expense_paid` is a status flag only; CC never moves money.
-3. **Ageing is AGGREGATE buckets, not per-guest/per-customer.** v1 returns
-   0-30/31-60/61-90/90+ counts + (gated) amounts in aggregate; a per-guest AR
-   breakdown is deferred.
+3. **Ageing is AGGREGATE buckets, not per-guest/per-customer.** ✅ **CLOSED in M8**
+   — `ar_ageing_by_customer` (`20260602200000_m8_reporting_marketing.sql`) buckets
+   outstanding invoices PER GUEST (0-30/31-60/61-90/90+, money-gated). M6's
+   aggregate `collections_ageing` stands; M8 adds the per-customer breakdown.
 4. **Input GST is captured as data only** (`expenses.input_gst_amount`/`supply_type`
    tag) — there is no input-tax-credit (ITC) computation/claim engine. The output
    GST engine (`resolve_gst`) is firewalled off entirely.
@@ -404,3 +405,36 @@ nothing here orders, receives, or moves money (manual W1d flow does).
 **Addressed by:** an optional later rule (recipe/booked-event forward-demand auto-PO
 reusing W1d `plan_purchase`) and, much later, a demand-forecast tier if the
 business needs it. None block M8.
+
+---
+
+## KL-13 — M8: reporting leaf scope trims (GST-return = reporting not filing; invoice_lines-sourced; minimal marketing)
+
+**Introduced:** M8 (reporting + marketing leaf — the final module-migration phase).
+
+**What:** M8 ships read reports (consolidated P&L, GST-return, per-customer ageing)
++ a minimal marketing layer. Deliberately NOT built:
+1. **GST-return is a REPORTING surface, not a filing one.** It assembles return
+   figures from the resolved snapshot; actual GSTN/portal SUBMISSION is
+   external-lane (credentialed gov filing, like FRRO/KL-4) and out of scope.
+2. **GST-return reads `invoice_lines`** (the W1e/S4 per-line resolve_gst output).
+   Legacy B5 *composite* invoices that carry header-level GST without
+   `invoice_lines` are not included; all modern settlement paths (W1e/S4) emit
+   `invoice_lines`, so this matches current production. A later tweak could union
+   header-GST invoices if any legacy composite invoices need to appear.
+3. **Marketing is minimal** — lead-source attribution + a simple campaign record +
+   LED revenue posting to the ledger. NO marketing automation (M3-auto owns B3
+   outreach), NO ML/attribution-modelling, NO LED ad-scheduling/playout, NO BI
+   warehouse / accounting-software export.
+4. **LED revenue posts NET** to the ledger; if a GST invoice for LED advertising
+   is needed, that is the existing invoice/`resolve_gst` path — M8 sets no rate.
+
+**Why acceptable now:** M8's contract — P&L-as-query over the one ledger, a
+GST-return that reads (never recomputes) the resolve_gst output, per-customer
+ageing, and a minimal real marketing leaf — is met and harness-proven
+(`scripts/m8-verify.mjs`). The trims are external-filing / BI / forecasting depth,
+not invariant gaps.
+
+**Addressed by:** the external-integration lane (GSTN filing, accounting export)
+and any later BI/marketing-depth phase. **This is the last module-migration
+sub-phase — the wave ends here.**

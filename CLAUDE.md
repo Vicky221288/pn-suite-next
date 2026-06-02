@@ -182,10 +182,40 @@ no shared credentials.
     (day) / deferred (night); capability gate; org isolation both directions;
     atomicity (qty 0 rejected, unchanged); audited.
     **B4/B3 regression run alongside — A_reorder only ADDS a registry entry.**
-  - **Next: M8** — reporting + marketing leaf (consolidated P&L / GST-return /
-    campaigns / LED / lead-source) — the final module-migration phase.
-- **▶ Next / not started (await go):** M8 (reporting/marketing leaf); M4-auto
-  (scheduled auto-repricing, KL-9); W6–8 channel manager; Yanolja cutover;
+  - **▶ M8 — REPORTING + MARKETING LEAF (final sub-phase): COMPLETE ✅ pending
+    apply+verify.** Benchmarked vs **Oracle OPERA reporting / Revinate Marketing**.
+    The leaf — reads what every prior phase wrote. **(A) `consolidated_pnl`** — pure
+    READ over the ONE `finance_ledger`: revenue credits − expense debits (incl. M6)
+    by source_domain (hall/stays/catering/core); NO stored P&L (invariant #10);
+    money gated. **(B) `gst_return_report`** — READ-ONLY over the resolve_gst OUTPUT
+    snapshot on `invoice_lines` (output tax by rate) + input GST as DATA from
+    expenses; **GST FIREWALL: never calls resolve_gst, never recomputes/stores a
+    rate, never alters invoices** (a `specified_premises` flip does NOT change the
+    reported snapshot). Reporting only — GSTN filing is external-lane. **(C)
+    `ar_ageing_by_customer`** — per-guest AR buckets (0-30/31-60/61-90/90+) over
+    outstanding invoices → **closes KL-11** (M6 ageing was aggregate-only); money
+    gated. **(D) Marketing leaf** — `campaigns` + `leads.campaign_id` ALTER (reuses
+    existing `leads.source`; no parallel lead store) + `led_bookings` whose revenue
+    posts to the EXISTING `finance_ledger` via `write_ledger` (supply_type 'led',
+    core stream; M8 sets NO rate); RPCs `upsert_campaign`/`set_lead_source`/
+    `lead_source_report`/`record_ad_revenue`. NO marketing automation (M3-auto owns
+    outreach), NO ML, NO ad scheduling. New cap **`marketing.manage`** (report money
+    gated by `pnl.view_margin`). UI `/reports` (`components/reports-view.tsx`,
+    `lib/actions/reporting.ts`). Migration
+    `supabase/migrations/20260602200000_m8_reporting_marketing.sql` **WRITTEN, NOT
+    APPLIED**. typecheck/lint/build green. Deferral → KL-13. Exit harness
+    `scripts/m8-verify.mjs` (run ×2): P&L nets M6 expense by stream + no stored
+    table + gated; GST firewall (snapshot rates; premises-flip doesn't change report;
+    invoices unaltered) + input GST data; per-customer ageing + settled-drops-out +
+    gated; marketing (lead source + conversions + campaign tie + LED → existing
+    ledger, no parallel ledger); capability gates; org isolation both directions;
+    atomicity (negative LED → 0 rows); audited.
+  - **🎉 MODULE-MIGRATION WAVE (M1a–M8) STRUCTURALLY COMPLETE pending apply+verify.**
+    16 legacy modules now re-expressed on the shared spine (4 were already DONE pre-wave;
+    M1a–M8 closed the 5 PARTIAL + 7 GAP). Wave-complete stamp lands once Vicky applies
+    M8 + `scripts/m8-verify.mjs` passes ×2.
+- **▶ Next / not started (await go):** M4-auto (scheduled auto-repricing, KL-9);
+  per-module UI-polish pass (program step 2); W6–8 channel manager; Yanolja cutover;
   productization/billing/white-label; live AiSensy wiring.
 
 ## Locked decisions

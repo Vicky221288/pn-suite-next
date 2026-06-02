@@ -28,6 +28,7 @@ export const CAP = {
   HOLD_MANAGE: 'hold.manage', // M5 — place/convert/release tentative date holds (availability_calendar read is member-open)
   EXPENSE_MANAGE: 'expense.manage', // M6 — record/submit expenses + categories + mark-paid (decide reuses approval.decide; ageing money via pnl.view_margin)
   INVENTORY_MANAGE: 'inventory.manage', // M7 — set per-item reorder-point/qty (the A_reorder rule reads on-hand + drafts via W1d)
+  MARKETING_MANAGE: 'marketing.manage', // M8 — campaigns + lead-source tagging + LED ad revenue (reports gate money by pnl.view_margin)
 } as const;
 
 export type Capability = (typeof CAP)[keyof typeof CAP];
@@ -43,8 +44,8 @@ export function canSeeCateringCost(caps: readonly string[]): boolean {
 
 /** Display roles → their capability sets. Capabilities are what's enforced. */
 export const ROLE_CAPABILITIES: Record<string, Capability[]> = {
-  owner: [CAP.BOOKING_CONFIRM, CAP.RECORD_DELETE, CAP.PNL_VIEW_MARGIN, CAP.DISCOUNT_APPROVE, CAP.SETTLEMENT_PROCESS, CAP.ROSTER_MANAGE, CAP.STAFF_MANAGE, CAP.APPROVAL_DECIDE, CAP.OPS_MANAGE, CAP.CRM_MANAGE, CAP.PRICING_MANAGE, CAP.HOLD_MANAGE, CAP.EXPENSE_MANAGE, CAP.INVENTORY_MANAGE],
-  property_manager: [CAP.BOOKING_CONFIRM, CAP.PNL_VIEW_MARGIN, CAP.DISCOUNT_APPROVE, CAP.SETTLEMENT_PROCESS, CAP.ROSTER_MANAGE, CAP.STAFF_MANAGE, CAP.APPROVAL_DECIDE, CAP.OPS_MANAGE, CAP.CRM_MANAGE, CAP.PRICING_MANAGE, CAP.HOLD_MANAGE, CAP.EXPENSE_MANAGE, CAP.INVENTORY_MANAGE],
+  owner: [CAP.BOOKING_CONFIRM, CAP.RECORD_DELETE, CAP.PNL_VIEW_MARGIN, CAP.DISCOUNT_APPROVE, CAP.SETTLEMENT_PROCESS, CAP.ROSTER_MANAGE, CAP.STAFF_MANAGE, CAP.APPROVAL_DECIDE, CAP.OPS_MANAGE, CAP.CRM_MANAGE, CAP.PRICING_MANAGE, CAP.HOLD_MANAGE, CAP.EXPENSE_MANAGE, CAP.INVENTORY_MANAGE, CAP.MARKETING_MANAGE],
+  property_manager: [CAP.BOOKING_CONFIRM, CAP.PNL_VIEW_MARGIN, CAP.DISCOUNT_APPROVE, CAP.SETTLEMENT_PROCESS, CAP.ROSTER_MANAGE, CAP.STAFF_MANAGE, CAP.APPROVAL_DECIDE, CAP.OPS_MANAGE, CAP.CRM_MANAGE, CAP.PRICING_MANAGE, CAP.HOLD_MANAGE, CAP.EXPENSE_MANAGE, CAP.INVENTORY_MANAGE, CAP.MARKETING_MANAGE],
   catering_lead: [CAP.CATERING_VIEW_COST, CAP.ROSTER_MANAGE, CAP.OPS_MANAGE, CAP.CRM_MANAGE, CAP.INVENTORY_MANAGE], // + kitchen inventory reorder
   hall_manager: [CAP.ROSTER_MANAGE, CAP.OPS_MANAGE, CAP.CRM_MANAGE, CAP.PRICING_MANAGE, CAP.HOLD_MANAGE], // + hall pricing + holds
   stays_manager: [CAP.ROSTER_MANAGE, CAP.OPS_MANAGE, CAP.CRM_MANAGE, CAP.PRICING_MANAGE, CAP.HOLD_MANAGE, CAP.INVENTORY_MANAGE], // + room amenities reorder
