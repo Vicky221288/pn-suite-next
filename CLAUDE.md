@@ -97,8 +97,8 @@ no shared credentials.
     inclusive conversion — that question stays parked). NO materialized calendar, NO
     scheduled auto-application (deferred → KL-9 / M4-auto). UI `/pricing`
     (`components/pricing-manager.tsx`, `lib/actions/pricing.ts`). Migration
-    `supabase/migrations/20260602160000_m4_dynamic_pricing.sql` **WRITTEN, NOT
-    APPLIED**. typecheck/lint/build green. Exit harness `scripts/m4-verify.mjs`
+    `supabase/migrations/20260602160000_m4_dynamic_pricing.sql` **APPLIED + verified
+    live**. typecheck/lint/build green. Exit harness `scripts/m4-verify.mjs`
     (run ×2): rule applies + breakdown; deterministic stacking + terminal override;
     conditions gate in/out (all three types); **GST firewall both directions**
     (rule change moves price not GST rate; premises flip moves GST rate not price;
@@ -120,8 +120,8 @@ no shared credentials.
     read filters `expires_at > now()` (correctness independent of the sweep) + the
     idempotent `run_hold_expiry` sweep. UI `/calendar` (`components/holds-calendar.tsx`,
     `lib/actions/holds.ts`). Migration
-    `supabase/migrations/20260602170000_m5_date_holds_calendar.sql` **WRITTEN, NOT
-    APPLIED**. typecheck/lint/build green. Exit harness `scripts/m5-verify.mjs`
+    `supabase/migrations/20260602170000_m5_date_holds_calendar.sql` **APPLIED + verified
+    live**. typecheck/lint/build green. Exit harness `scripts/m5-verify.mjs`
     (run ×2): hold created (no GiST row); two holds coexist; hold doesn't block a
     confirm; convert delegates → real booking/stay; conflicting convert rejected by
     GiST + hold unchanged (zero orphan); lapsed hold ignored by reads pre-sweep then
@@ -149,8 +149,8 @@ no shared credentials.
     (decide reuses `approval.decide`; ageing money reuses `pnl.view_margin`).
     `mark_expense_paid` is status-only (NO payment execution). UI `/finance`
     (`components/finance-manager.tsx`, `lib/actions/finance.ts`). Migration
-    `supabase/migrations/20260602180000_m6_finance_backoffice.sql` **WRITTEN, NOT
-    APPLIED**. typecheck/lint/build green. Deferral → KL-11. Exit harness
+    `supabase/migrations/20260602180000_m6_finance_backoffice.sql` **APPLIED + verified
+    live**. typecheck/lint/build green. Deferral → KL-11. Exit harness
     `scripts/m6-verify.mjs` (run ×2): submit reuses the SAME approval tables as
     request_type=expense (no expense-approval table); inherited multi-tier/distinct/
     anti-self; approve→ledger debit / reject→no post; firewall (no invoice touched,
@@ -175,7 +175,7 @@ no shared credentials.
     ONLY — no ordering/receiving/payment (manual W1d flow). UI `/inventory`
     (`components/inventory-reorder.tsx`, `lib/actions/inventory.ts`; KL-1-safe column
     selection). Migration `supabase/migrations/20260602190000_m7_inventory_reorder.sql`
-    **WRITTEN, NOT APPLIED**. typecheck/lint/build green. Deferral → KL-12. Exit
+    **APPLIED + verified live**. typecheck/lint/build green. Deferral → KL-12. Exit
     harness `scripts/m7-verify.mjs` (run ×2): NULL not monitored; detect <= point /
     not > point; supplier-grouped draft via W1d (no parallel table); on-hand from W0
     drives detection; idempotent re-tick → 0; re-draft after order; B3 notify sent
@@ -202,8 +202,8 @@ no shared credentials.
     outreach), NO ML, NO ad scheduling. New cap **`marketing.manage`** (report money
     gated by `pnl.view_margin`). UI `/reports` (`components/reports-view.tsx`,
     `lib/actions/reporting.ts`). Migration
-    `supabase/migrations/20260602200000_m8_reporting_marketing.sql` **WRITTEN, NOT
-    APPLIED**. typecheck/lint/build green. Deferral → KL-13. Exit harness
+    `supabase/migrations/20260602200000_m8_reporting_marketing.sql` **APPLIED + verified
+    live**. typecheck/lint/build green. Deferral → KL-13. Exit harness
     `scripts/m8-verify.mjs` (run ×2): P&L nets M6 expense by stream + no stored
     table + gated; GST firewall (snapshot rates; premises-flip doesn't change report;
     invoices unaltered) + input GST data; per-customer ageing + settled-drops-out +
