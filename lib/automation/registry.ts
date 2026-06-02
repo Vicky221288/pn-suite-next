@@ -34,6 +34,8 @@ const RULES: Rule[] = [
   { key: 'A_special_dates', rpc: 'run_special_date_outreach', cadence: 'every_tick', scope: 'per_org' },
   // M5 — expire lapsed tentative date holds (belt to the read-filter suspenders; idempotent)
   { key: 'A_hold_expiry', rpc: 'run_hold_expiry', cadence: 'every_tick', scope: 'per_org' },
+  // M7 — A11 detect (on-hand <= reorder_point) + A12 draft PO via W1d + B3 notify (idempotent)
+  { key: 'A_reorder', rpc: 'run_reorder_check', cadence: 'every_tick', scope: 'per_org' },
 ];
 
 function isDue(rule: Rule, now: Date): boolean {

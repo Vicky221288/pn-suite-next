@@ -158,10 +158,35 @@ no shared credentials.
     ageing buckets + coalesce + paid-drops-out + money gating; capability gates; org
     isolation both directions; atomicity (required_approvals=0 → expense rolls back
     to draft); audited.
-  - **Next: M7** — inventory reorder-point + procurement automation (A11/A12).
-- **▶ Next / not started (await go):** M7–M8 (inventory reorder · reporting/
-  marketing); M4-auto (scheduled auto-repricing, KL-9); W6–8 channel manager;
-  Yanolja cutover; productization/billing/white-label; live AiSensy wiring.
+  - **▶ M7 — INVENTORY REORDER + PROCUREMENT AUTOMATION: COMPLETE ✅ pending
+    apply+verify.** Benchmarked vs **MarketMan / Apicbase** (threshold reorder; no
+    ML forecast). Mostly B4-registry wiring over W0 inventory + W1d purchasing.
+    **Config:** `inventory_items.reorder_point` made NULLABLE (NULL = NOT monitored;
+    legacy default-0 backfilled → NULL = opt-in) + new `reorder_qty`;
+    `set_reorder_point` (cap **`inventory.manage`**) sets both (a monitored item
+    needs a positive qty). **Rule `run_reorder_check`** (registry **`A_reorder`**,
+    per-org/every-tick): A11 detects `quantity_on_hand <= reorder_point` reading the
+    EXISTING W0 field (no parallel on-hand) → A12 drafts into the EXISTING W1d
+    `purchase_orders`/`purchase_order_lines` (status `draft`, new `source='reorder'`
+    tag, grouped by supplier — the W1d PO path, no parallel table) + ONE B3 manager
+    notify (`enqueue_outbound`, idempotent per-org-per-day + quiet-hours-aware).
+    **Idempotent:** an item already in an OPEN draft reorder PO is skipped; once that
+    draft leaves `draft` (ordered/received) the item re-drafts if still short. DRAFT
+    ONLY — no ordering/receiving/payment (manual W1d flow). UI `/inventory`
+    (`components/inventory-reorder.tsx`, `lib/actions/inventory.ts`; KL-1-safe column
+    selection). Migration `supabase/migrations/20260602190000_m7_inventory_reorder.sql`
+    **WRITTEN, NOT APPLIED**. typecheck/lint/build green. Deferral → KL-12. Exit
+    harness `scripts/m7-verify.mjs` (run ×2): NULL not monitored; detect <= point /
+    not > point; supplier-grouped draft via W1d (no parallel table); on-hand from W0
+    drives detection; idempotent re-tick → 0; re-draft after order; B3 notify sent
+    (day) / deferred (night); capability gate; org isolation both directions;
+    atomicity (qty 0 rejected, unchanged); audited.
+    **B4/B3 regression run alongside — A_reorder only ADDS a registry entry.**
+  - **Next: M8** — reporting + marketing leaf (consolidated P&L / GST-return /
+    campaigns / LED / lead-source) — the final module-migration phase.
+- **▶ Next / not started (await go):** M8 (reporting/marketing leaf); M4-auto
+  (scheduled auto-repricing, KL-9); W6–8 channel manager; Yanolja cutover;
+  productization/billing/white-label; live AiSensy wiring.
 
 ## Locked decisions
 - **OP MODEL v2 governs everything** (supersedes v1.2). PN Suite NXT = ONE

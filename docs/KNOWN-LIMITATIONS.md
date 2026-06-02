@@ -373,3 +373,34 @@ external-rail concerns, not invariant gaps.
 entries + ageing for the consolidated P&L (and can add per-guest AR); a **payment
 gateway** is a separate net-new external-lane scoping item (already noted); an ITC
 engine, if ever needed, is a dedicated finance phase. None block M7.
+
+---
+
+## KL-12 — M7: threshold reorder only (no demand forecast; recipe-driven auto-PO not built)
+
+**Introduced:** M7 (inventory reorder + procurement automation).
+
+**What:** M7 ships **threshold** reorder — A11 detects `on_hand <= reorder_point`
+and A12 drafts a supplier-grouped PO via the W1d path + notifies. Deliberately NOT
+built:
+1. **No demand forecasting / ML** — reorder fires on a static per-item threshold,
+   not a forecast (MarketMan/Apicbase's predictive replenishment tier is out).
+2. **No recipe-driven / booked-event auto-PO.** The wave plan's M7 sketch also
+   floated an A11 variant that drafts POs from *booked-event recipe needs*
+   (forward demand). M7 implements the TASK-scoped threshold reorder only; the
+   recipe→requirement→PO path already exists manually in W1d
+   (`generate_production` + `plan_purchase` off a signed BEO), so forward-demand
+   auto-drafting would be a thin later rule reusing those, not net-new machinery.
+3. **No multi-warehouse / location transfers** — single stock pool per org.
+4. **Reorder draft qty is a fixed `reorder_qty`** (not target-minus-on-hand /
+   economic-order-quantity). Simple and predictable for v1.
+
+**Why acceptable now:** M7's contract — opt-in per-item reorder config, on-hand
+detection from the one W0 source, idempotent supplier-grouped DRAFT POs via the
+W1d path, B3 notify, all registry-driven — is met and harness-proven
+(`scripts/m7-verify.mjs`). The trims are forecasting depth, not invariant gaps;
+nothing here orders, receives, or moves money (manual W1d flow does).
+
+**Addressed by:** an optional later rule (recipe/booked-event forward-demand auto-PO
+reusing W1d `plan_purchase`) and, much later, a demand-forecast tier if the
+business needs it. None block M8.
