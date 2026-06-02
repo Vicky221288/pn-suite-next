@@ -342,3 +342,34 @@ and a composed availability read — is fully met and harness-proven
 and, optionally, a small `convert_hold`/`confirm_booking` courtesy that releases
 sibling pending holds on the same slot. The data already supports both. Does not
 block M6. (OTA/channel availability overlay remains W6–8, not here.)
+
+---
+
+## KL-11 — M6: finance back-office scope trims (no GL / bank-rec / payment rails / per-guest ageing)
+
+**Introduced:** M6 (finance back-office).
+
+**What:** M6 delivers expense capture → tiered approval (reusing the M1b primitive)
+→ a DEBIT post to the shared `finance_ledger`, plus a collections/AR-ageing READ
+over `invoices`. Deliberately NOT built:
+1. **No double-entry general ledger / chart of accounts** — expenses post a single
+   tagged debit to the one `finance_ledger` (invariant #10: P&L is a query). A full
+   GL is out of scope (and not needed at PN's scale).
+2. **No bank reconciliation / no payment execution / no payment rails.**
+   `mark_expense_paid` is a status flag only; CC never moves money.
+3. **Ageing is AGGREGATE buckets, not per-guest/per-customer.** v1 returns
+   0-30/31-60/61-90/90+ counts + (gated) amounts in aggregate; a per-guest AR
+   breakdown is deferred.
+4. **Input GST is captured as data only** (`expenses.input_gst_amount`/`supply_type`
+   tag) — there is no input-tax-credit (ITC) computation/claim engine. The output
+   GST engine (`resolve_gst`) is firewalled off entirely.
+
+**Why acceptable now:** M6's contract — expenses on the one ledger via the reused
+approval primitive, the finance firewall, and AR ageing over invoices — is fully
+met and harness-proven (`scripts/m6-verify.mjs`). The trims are accounting-depth /
+external-rail concerns, not invariant gaps.
+
+**Addressed by:** later phases — the **M8 reporting leaf** consumes these ledger
+entries + ageing for the consolidated P&L (and can add per-guest AR); a **payment
+gateway** is a separate net-new external-lane scoping item (already noted); an ITC
+engine, if ever needed, is a dedicated finance phase. None block M7.

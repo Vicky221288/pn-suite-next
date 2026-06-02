@@ -130,11 +130,38 @@ no shared credentials.
     conflict); capability gates (incl. hold.manage-without-booking.confirm can't
     convert a hall hold); org isolation both directions; atomicity; audited.
     **B4/B3 regression run alongside — `run_hold_expiry` only ADDS a registry entry.**
-  - **Next: M6** — finance back-office (expense ledger + tiered approval + ageing).
-- **▶ Next / not started (await go):** M6–M8 (finance + expense approval ·
-  inventory reorder · reporting/marketing); M4-auto (scheduled auto-repricing,
-  KL-9); W6–8 channel manager; Yanolja cutover; productization/billing/white-label;
-  live AiSensy wiring.
+  - **▶ M6 — FINANCE BACK-OFFICE: COMPLETE ✅ pending apply+verify.** Benchmarked
+    vs **Zoho Books/Expense · SAP Concur**. Tables `expense_categories` + `expenses`
+    (payee = W1d `vendors` reuse; `supply_type`/`input_gst_amount` are DATA tags
+    only). **(A) Expense ledger** — on approval the expense POSTS a DEBIT to the
+    EXISTING W0 `finance_ledger` via `write_ledger` (supply_type tag `expense`,
+    source_domain hall|stays|catering|core, linked to the expense) — NO parallel
+    ledger; P&L stays a query. **(B) Tiered approval REUSES the M1b primitive** —
+    `submit_expense` → `submit_approval_request(request_type='expense', subject=expense)`;
+    `decide_expense` → `decide_approval` (anti-self / distinct-approver / multi-tier
+    inherited; on reaching threshold → atomic decide+post; reject → no post). NO new
+    approval table. **(C) Collections/ageing** — `collections_ageing` READ over the
+    EXISTING `invoices` (outstanding = status issued ∧ coalesce(amount_due,total)>0,
+    bucketed 0-30/31-60/61-90/90+); NO new AR table; money figures gated by
+    `pnl.view_margin`, counts member-visible. **FINANCE FIREWALL:** M6 never touches
+    `resolve_gst` / invoices / the revenue path; input GST is recorded data, never
+    resolved; ledger debit = expense amount exactly. New cap **`expense.manage`**
+    (decide reuses `approval.decide`; ageing money reuses `pnl.view_margin`).
+    `mark_expense_paid` is status-only (NO payment execution). UI `/finance`
+    (`components/finance-manager.tsx`, `lib/actions/finance.ts`). Migration
+    `supabase/migrations/20260602180000_m6_finance_backoffice.sql` **WRITTEN, NOT
+    APPLIED**. typecheck/lint/build green. Deferral → KL-11. Exit harness
+    `scripts/m6-verify.mjs` (run ×2): submit reuses the SAME approval tables as
+    request_type=expense (no expense-approval table); inherited multi-tier/distinct/
+    anti-self; approve→ledger debit / reject→no post; firewall (no invoice touched,
+    input GST data, debit = amount); P&L-as-query (one ledger nets revenue−expense);
+    ageing buckets + coalesce + paid-drops-out + money gating; capability gates; org
+    isolation both directions; atomicity (required_approvals=0 → expense rolls back
+    to draft); audited.
+  - **Next: M7** — inventory reorder-point + procurement automation (A11/A12).
+- **▶ Next / not started (await go):** M7–M8 (inventory reorder · reporting/
+  marketing); M4-auto (scheduled auto-repricing, KL-9); W6–8 channel manager;
+  Yanolja cutover; productization/billing/white-label; live AiSensy wiring.
 
 ## Locked decisions
 - **OP MODEL v2 governs everything** (supersedes v1.2). PN Suite NXT = ONE
