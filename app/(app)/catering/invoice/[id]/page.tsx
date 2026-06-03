@@ -1,8 +1,12 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getInvoice } from '@/lib/actions/catering-invoice';
 import { formatINR } from '@/lib/utils';
 import { SettleInvoiceButton } from '@/components/settle-invoice-button';
+import { DetailHeader } from '@/components/ui/detail-header';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { InfoRow } from '@/components/ui/info-row';
+import { Table, THead, TH, TR, TD } from '@/components/ui/table';
 
 interface Line { id: string; stream: string; description: string | null; sac_code: string; taxable_value: number; billed_count: number | null; gst_rate: number; itc: boolean; cgst: number; sgst: number; line_total: number }
 interface TaxRow { gst_rate: number; itc: boolean; taxable: number; cgst: number; sgst: number }
@@ -17,72 +21,82 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   const paid = invoice.status === 'paid';
 
   return (
-    <div className="flex flex-col gap-5">
-      <Link href="/catering/invoice" className="text-sm" style={{ color: 'var(--color-brand)' }}>← Invoices</Link>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>{invoice.invoice_number}</h1>
-        <span style={{ color: paid ? 'var(--color-success)' : 'var(--color-brand)', fontWeight: 600 }}>{invoice.status}</span>
-      </div>
+    <div className="flex flex-col" style={{ gap: 'var(--space-6)' }}>
+      <DetailHeader
+        backHref="/catering/invoice"
+        backLabel="Invoices"
+        eyebrow="Catering · Consolidated GST invoice"
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{invoice.invoice_number}</span>}
+        status={<Badge tone={paid ? 'success' : 'info'}>{invoice.status}</Badge>}
+        meta={<span style={{ fontFamily: 'var(--font-mono)' }}>due {formatINR(invoice.amount_due ?? invoice.total)}</span>}
+      />
 
-      <section style={card}>
-        <h2 style={h2}>Lines</h2>
-        <table className="w-full text-sm">
-          <thead><tr style={{ color: 'var(--color-text-tertiary)', textAlign: 'left' }}>
-            <th>Supply</th><th>SAC</th><th>Taxable</th><th>Rate</th><th>CGST</th><th>SGST</th><th>Total</th>
-          </tr></thead>
+      {/* Lines */}
+      <Card padded={false} title="Lines" subtitle="per supply stream — rate resolved by the engine">
+        <Table>
+          <THead>
+            <TR><TH>Supply</TH><TH>SAC</TH><TH align="right">Taxable</TH><TH align="right">Rate</TH><TH align="right">CGST</TH><TH align="right">SGST</TH><TH align="right">Total</TH></TR>
+          </THead>
           <tbody>
             {lines.map((l) => (
-              <tr key={l.id} style={{ borderTop: '1px solid var(--color-divider)', color: 'var(--color-text)' }}>
-                <td className="py-1">{l.stream}{l.billed_count != null ? <span style={{ color: 'var(--color-text-tertiary)' }}> ·{l.billed_count} pax</span> : null}</td>
-                <td style={mono}>{l.sac_code}</td>
-                <td style={mono}>{formatINR(l.taxable_value)}</td>
-                <td style={mono}>{l.gst_rate}%{l.itc ? ' w/ITC' : ''}</td>
-                <td style={mono}>{formatINR(l.cgst)}</td>
-                <td style={mono}>{formatINR(l.sgst)}</td>
-                <td style={mono}>{formatINR(l.line_total)}</td>
-              </tr>
+              <TR key={l.id}>
+                <TD>
+                  <span style={{ fontWeight: 500, color: 'var(--color-text)', textTransform: 'capitalize' }}>{l.stream.replace(/_/g, ' ')}</span>
+                  {l.billed_count != null && <span style={{ display: 'block', fontSize: 'var(--text-xs)', fontFamily: 'var(--font-mono)', color: 'var(--color-text-tertiary)' }}>{l.billed_count} pax</span>}
+                </TD>
+                <TD mono><span style={{ color: 'var(--color-text-tertiary)' }}>{l.sac_code}</span></TD>
+                <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{formatINR(l.taxable_value)}</span></TD>
+                <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{l.gst_rate}%{l.itc ? ' w/ITC' : ''}</span></TD>
+                <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{formatINR(l.cgst)}</span></TD>
+                <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{formatINR(l.sgst)}</span></TD>
+                <TD align="right" mono><span style={{ color: 'var(--color-text)' }}>{formatINR(l.line_total)}</span></TD>
+              </TR>
             ))}
           </tbody>
-        </table>
-      </section>
+        </Table>
+      </Card>
 
-      <section style={card}>
-        <h2 style={h2}>Tax summary (per rate)</h2>
-        <table className="w-full text-sm">
-          <thead><tr style={{ color: 'var(--color-text-tertiary)', textAlign: 'left' }}><th>Rate</th><th>Taxable</th><th>CGST</th><th>SGST</th></tr></thead>
-          <tbody>
-            {(invoice.tax_summary ?? []).map((t) => (
-              <tr key={t.gst_rate} style={{ borderTop: '1px solid var(--color-divider)', color: 'var(--color-text)' }}>
-                <td className="py-1">{t.gst_rate}%{t.itc ? ' w/ITC' : ' no-ITC'}</td>
-                <td style={mono}>{formatINR(t.taxable)}</td>
-                <td style={mono}>{formatINR(t.cgst)}</td>
-                <td style={mono}>{formatINR(t.sgst)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+      <div className="grid pn-today-main" style={{ gap: 'var(--space-6)' }}>
+        {/* Tax summary per rate */}
+        <Card padded={false} title="Tax summary" subtitle="grouped per rate">
+          <Table>
+            <THead>
+              <TR><TH>Rate</TH><TH align="right">Taxable</TH><TH align="right">CGST</TH><TH align="right">SGST</TH></TR>
+            </THead>
+            <tbody>
+              {(invoice.tax_summary ?? []).map((t) => (
+                <TR key={t.gst_rate}>
+                  <TD><span style={{ color: 'var(--color-text)' }}>{t.gst_rate}%<span style={{ color: 'var(--color-text-tertiary)' }}>{t.itc ? ' w/ITC' : ' no-ITC'}</span></span></TD>
+                  <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{formatINR(t.taxable)}</span></TD>
+                  <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{formatINR(t.cgst)}</span></TD>
+                  <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{formatINR(t.sgst)}</span></TD>
+                </TR>
+              ))}
+            </tbody>
+          </Table>
+        </Card>
 
-      <section style={card}>
-        <div className="flex flex-col gap-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-          <div className="flex justify-between"><span>Subtotal</span><span style={mono}>{formatINR(invoice.subtotal)}</span></div>
-          <div className="flex justify-between"><span>CGST + SGST</span><span style={mono}>{formatINR(invoice.cgst + invoice.sgst)}</span></div>
-          <div className="flex justify-between" style={{ color: 'var(--color-text)', fontWeight: 600 }}><span>Total</span><span style={mono}>{formatINR(invoice.total)}</span></div>
-          <div className="flex justify-between"><span>Less: deposit applied (escrowed — not taxed)</span><span style={mono}>− {formatINR(invoice.deposit_applied)}</span></div>
-          <div className="flex justify-between" style={{ color: 'var(--color-text)', fontWeight: 600 }}><span>Amount due</span><span style={mono}>{formatINR(invoice.amount_due ?? invoice.total)}</span></div>
+        {/* Totals + settle */}
+        <div className="flex flex-col" style={{ gap: 'var(--space-6)' }}>
+          <Card elevated accent eyebrow="Amount due" title={<span style={{ fontFamily: 'var(--font-mono)' }}>{formatINR(invoice.amount_due ?? invoice.total)}</span>}>
+            <dl className="flex flex-col" style={{ gap: 'var(--space-2)' }}>
+              <InfoRow label="Subtotal" value={formatINR(invoice.subtotal)} mono />
+              <InfoRow label="CGST + SGST" value={formatINR(invoice.cgst + invoice.sgst)} mono tone="muted" />
+              <InfoRow label="Total" value={formatINR(invoice.total)} mono strong />
+              <InfoRow label="Less: deposit applied" value={`− ${formatINR(invoice.deposit_applied)}`} mono tone="muted" />
+              <InfoRow label="Amount due" value={formatINR(invoice.amount_due ?? invoice.total)} mono strong tone="brand" />
+            </dl>
+            <p style={{ marginTop: 'var(--space-3)', fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)' }}>The deposit is escrowed — not a revenue line and never taxed.</p>
+          </Card>
+
+          {!paid && (
+            <Card title="Settle" subtitle="Owner / PM only">
+              <SettleInvoiceButton invoiceId={invoice.id} />
+              <p style={{ marginTop: 'var(--space-3)', fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)' }}>Posts revenue per stream to the ledger; the deposit is discharged against balance, or forfeited → taxable income.</p>
+            </Card>
+          )}
         </div>
-      </section>
-
-      {!paid && (
-        <section style={card}>
-          <h2 style={h2}>Settle</h2>
-          <SettleInvoiceButton invoiceId={invoice.id} />
-          <p className="mt-2 text-xs" style={{ color: 'var(--color-text-tertiary)' }}>Posts revenue per stream to the ledger; deposit is discharged against balance (or forfeited → taxable income). Owner/PM only.</p>
-        </section>
-      )}
+      </div>
     </div>
   );
 }
-const card: React.CSSProperties = { background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)', padding: 'var(--card-pad)' };
-const h2 = { color: 'var(--color-text-secondary)', fontWeight: 600, fontSize: 'var(--text-sm)', marginBottom: '0.75rem' } as React.CSSProperties;
-const mono: React.CSSProperties = { fontFamily: 'var(--font-mono)' };

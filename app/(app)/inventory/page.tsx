@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getRoleContext } from '@/lib/auth/context';
 import { CAP } from '@/lib/auth/capabilities';
 import { InventoryReorder } from '@/components/inventory-reorder';
+import { PageHeader } from '@/components/ui/page-header';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,11 +17,12 @@ export default async function InventoryPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Inventory · reorder</h1>
-      <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
-        Set a reorder point + qty per item to opt it into monitoring. The reorder rule auto-drafts purchase orders (draft only — you order &amp; receive in purchasing).
-      </p>
+    <div className="flex flex-col">
+      <PageHeader
+        eyebrow="Operations"
+        title="Inventory · reorder"
+        subtitle="Set a reorder point + qty per item to opt it into monitoring. The reorder rule auto-drafts purchase orders (draft only — you order &amp; receive in purchasing)."
+      />
       <InventoryReorder
         items={(items ?? []) as never}
         draftPos={(pos ?? []) as never}

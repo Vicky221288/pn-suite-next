@@ -67,3 +67,72 @@ body {
 h1, h2, h3, .font-display {
   font-family: var(--font-display);
 }
+
+/* ============================================================================
+   APP SHELL (UI polish step 1) — persistent rail on desktop, off-canvas drawer
+   on mobile. Token-driven; no raw hex. Reduced-motion already globally honored.
+   ============================================================================ */
+.pn-sidebar {
+  position: fixed; inset: 0 auto 0 0; width: var(--sidebar-w);
+  display: flex; flex-direction: column;
+  background: var(--nav-bg); border-right: 1px solid var(--color-border);
+  transform: translateX(-100%); transition: transform var(--dur-base) var(--ease-standard);
+  z-index: var(--z-modal);
+}
+.pn-sidebar[data-open="true"] { transform: none; box-shadow: var(--shadow-overlay); }
+.pn-scrim { position: fixed; inset: 0; background: var(--color-overlay); z-index: calc(var(--z-modal) - 1); }
+@media (min-width: 1024px) {
+  .pn-sidebar { transform: none; z-index: var(--z-sticky); box-shadow: none; }
+  .pn-scrim { display: none; }
+  .pn-app-main { margin-left: var(--sidebar-w); }
+  .pn-menu-btn { display: none; }
+}
+
+/* Nav rows — maroon active accent bar; calm hover. */
+.pn-nav-item {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
+  color: var(--nav-item-text); font-size: var(--text-sm); line-height: 1.2;
+  position: relative; transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+}
+.pn-nav-item:hover { background: var(--color-surface-sunken); color: var(--color-text); }
+.pn-nav-item[data-active="true"] { background: var(--nav-item-active-bg); color: var(--nav-item-active-text); font-weight: var(--weight-semibold); }
+.pn-nav-item[data-active="true"]::before {
+  content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 1.1rem; border-radius: var(--radius-full); background: var(--nav-item-active-bar);
+}
+.pn-nav-group-label {
+  font-size: 0.6875rem; font-weight: var(--weight-semibold); letter-spacing: var(--tracking-wide);
+  text-transform: uppercase; color: var(--color-text-tertiary);
+  padding: var(--space-2) var(--space-3) var(--space-1);
+}
+
+/* Today command grid — dominant schedule (left) + attention/actions (right). */
+.pn-today-main { grid-template-columns: 1fr; }
+@media (min-width: 1024px) { .pn-today-main { grid-template-columns: 2fr 1fr; } }
+
+/* Data-grid row hover (the CRM workhorse). */
+.pn-tr { transition: background var(--dur-fast) var(--ease-standard); }
+.pn-tr:hover { background: var(--table-row-hover); }
+
+/* Card / tile hover lift (subtle, productivity-respecting). */
+.pn-hover-lift { transition: transform var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard); }
+.pn-hover-lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+/* One orchestrated page-load reveal — staggered via inline animation-delay. */
+@keyframes pn-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.pn-rise { animation: pn-rise var(--dur-slow) var(--ease-emphasized) both; }
+
+/* Loading skeleton shimmer (token-driven; reduced-motion stops the sweep). */
+@keyframes pn-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.pn-skeleton {
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--color-surface-sunken) 25%, var(--color-surface) 38%, var(--color-surface-sunken) 52%);
+  background-size: 200% 100%;
+  animation: pn-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Custom scrollbar for the rail (warm, unobtrusive). */
+.pn-scroll { scrollbar-width: thin; scrollbar-color: var(--color-border-strong) transparent; }
+.pn-scroll::-webkit-scrollbar { width: 8px; }
+.pn-scroll::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: var(--radius-full); }

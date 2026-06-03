@@ -21,7 +21,7 @@ export function RoomAdmin({ types }: { types: RoomType[] }) {
     const res = await fn(); setBusy(false);
     if (res.ok) { reset?.(); router.refresh(); } else setMsg(`${res.error}: ${res.message}`);
   }
-  const i: React.CSSProperties = { background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 'var(--input-radius)', color: 'var(--input-text)', padding: '6px 10px', fontSize: 'var(--text-sm)' };
+  const i: React.CSSProperties = { background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 'var(--input-radius)', color: 'var(--input-text)', padding: '8px 12px', fontSize: 'var(--text-sm)', minHeight: 'var(--tap-min)' };
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end gap-2">

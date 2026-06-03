@@ -1,48 +1,27 @@
 import { redirect } from 'next/navigation';
 import { getRoleContext } from '@/lib/auth/context';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { createClient } from '@/lib/supabase/server';
+import { AppShell } from '@/components/shell/app-shell';
 
 /**
  * Protected app shell. Server-resolves the user (defence in depth alongside
- * middleware) and renders the topbar. The full role-aware sidebar/nav lands in
- * the spine wave; B0 keeps the shell minimal but real.
+ * middleware) + the org/property name, then renders the persistent maroon-Meridian
+ * navigation shell. Visual chrome only — no data/logic here.
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getRoleContext();
   if (!ctx) redirect('/login');
 
+  let orgName = 'PN Master Suite';
+  if (ctx.orgId) {
+    const supabase = await createClient();
+    const { data: org } = await supabase.from('orgs').select('name').eq('id', ctx.orgId).maybeSingle();
+    if (org?.name) orgName = org.name;
+  }
+
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header
-        className="flex items-center justify-between px-5"
-        style={{
-          height: 'var(--topbar-h)',
-          background: 'var(--color-surface)',
-          borderBottom: '1px solid var(--color-border)',
-        }}
-      >
-        <span className="font-display text-lg" style={{ color: 'var(--color-brand)' }}>
-          PN Master Suite
-        </span>
-        <div className="flex items-center gap-4">
-          <span className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
-            {ctx.email}
-          </span>
-          <ThemeToggle />
-          <form action="/auth/signout" method="post">
-            <button
-              type="submit"
-              className="text-sm"
-              style={{ color: 'var(--color-text-secondary)' }}
-            >
-              Sign out
-            </button>
-          </form>
-        </div>
-      </header>
-      <main className="mx-auto w-full flex-1 px-5 py-6" style={{ maxWidth: 'var(--content-max)' }}>
-        {children}
-      </main>
-    </div>
+    <AppShell orgName={orgName} email={ctx.email ?? ''} role={ctx.role}>
+      {children}
+    </AppShell>
   );
 }

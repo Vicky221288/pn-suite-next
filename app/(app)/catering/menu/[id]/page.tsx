@@ -1,8 +1,14 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { formatINR } from '@/lib/utils';
 import { MenuScalePreview } from '@/components/menu-scale-preview';
+import { DetailHeader } from '@/components/ui/detail-header';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { EmptyState } from '@/components/ui/empty-state';
+import { InfoRow } from '@/components/ui/info-row';
+import { Table, THead, TH, TR, TD } from '@/components/ui/table';
+import { ChefHat } from 'lucide-react';
 
 /** Menu item detail — its recipe lines + the scale/cost preview. */
 export default async function MenuItemDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -21,38 +27,58 @@ export default async function MenuItemDetailPage({ params }: { params: Promise<{
     : { data: [] as never[] };
 
   return (
-    <div className="flex flex-col gap-5">
-      <Link href="/catering/menu" className="text-sm" style={{ color: 'var(--color-brand)' }}>← Menu</Link>
-      <div className="flex items-baseline justify-between">
-        <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>{item.name}</h1>
-        <span className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>{item.category ?? '—'} · {formatINR(item.default_selling_price)} · {item.supply_type ?? 'untagged'}</span>
+    <div className="flex flex-col" style={{ gap: 'var(--space-6)' }}>
+      <DetailHeader
+        backHref="/catering/menu"
+        backLabel="Menu & recipes"
+        eyebrow="Catering · Menu item"
+        title={item.name}
+        status={<Badge tone="neutral">{(item.supply_type ?? 'untagged').replace(/_/g, ' ')}</Badge>}
+        meta={<span style={{ fontFamily: 'var(--font-mono)' }}>{formatINR(item.default_selling_price)} / plate</span>}
+      />
+
+      <div className="grid pn-today-main" style={{ gap: 'var(--space-6)' }}>
+        {/* Recipe — the dominant left column */}
+        <Card title="Recipe" subtitle={recipe ? `base yield ${recipe.base_yield} · ${recipe.scale_mode}` : 'bought-in item'} padded={false}>
+          {!recipe ? (
+            <EmptyState icon={ChefHat} title="No recipe" message="This is a bought-in item — nothing to scale. (Recipe editing arrives in a later sub-phase.)" />
+          ) : (
+            <Table>
+              <THead>
+                <TR><TH>Ingredient</TH><TH align="right">Quantity</TH></TR>
+              </THead>
+              <tbody>
+                {(lines ?? []).map((l, i) => {
+                  const inv = l.inventory_items as unknown as { name: string } | null;
+                  return (
+                    <TR key={i}>
+                      <TD><span style={{ color: 'var(--color-text)' }}>{inv?.name ?? l.inventory_item_id}</span></TD>
+                      <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{l.quantity} {l.unit}</span></TD>
+                    </TR>
+                  );
+                })}
+              </tbody>
+            </Table>
+          )}
+        </Card>
+
+        {/* Facts + scale preview */}
+        <div className="flex flex-col" style={{ gap: 'var(--space-6)' }}>
+          <Card title="Item">
+            <dl className="flex flex-col" style={{ gap: 'var(--space-2)' }}>
+              <InfoRow label="Category" value={item.category ?? '—'} />
+              <InfoRow label="Selling price" value={`${formatINR(item.default_selling_price)} / plate`} mono />
+              <InfoRow label="Supply type" value={<Badge tone="neutral">{(item.supply_type ?? 'untagged').replace(/_/g, ' ')}</Badge>} />
+              {recipe && <InfoRow label="Base yield" value={recipe.base_yield} mono />}
+              {recipe && <InfoRow label="Scale mode" value={recipe.scale_mode} />}
+            </dl>
+          </Card>
+
+          <Card title="Scale preview" subtitle="Enter a guest count → scaled ingredients (food cost shown only where your role permits)">
+            <MenuScalePreview menuItemId={id} />
+          </Card>
+        </div>
       </div>
-
-      <section style={card}>
-        <h2 style={h2}>Recipe {recipe ? `· base yield ${recipe.base_yield} · ${recipe.scale_mode}` : ''}</h2>
-        {!recipe ? (
-          <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>No recipe — bought-in item. (Recipe editing arrives in a later sub-phase.)</p>
-        ) : (
-          <ul className="flex flex-col text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            {(lines ?? []).map((l, i) => {
-              const inv = l.inventory_items as unknown as { name: string } | null;
-              return (
-                <li key={i} className="flex justify-between py-1" style={{ borderBottom: '1px solid var(--color-divider)' }}>
-                  <span>{inv?.name ?? l.inventory_item_id}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)' }}>{l.quantity} {l.unit}</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <section style={card}>
-        <h2 style={h2}>Scale preview</h2>
-        <MenuScalePreview menuItemId={id} />
-      </section>
     </div>
   );
 }
-const card: React.CSSProperties = { background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)', padding: 'var(--card-pad)' };
-const h2 = { color: 'var(--color-text-secondary)', fontWeight: 600, fontSize: 'var(--text-sm)', marginBottom: '0.75rem' } as React.CSSProperties;

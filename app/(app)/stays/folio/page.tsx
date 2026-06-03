@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { FolioManager } from '@/components/folio-manager';
+import { PageHeader } from '@/components/ui/page-header';
 
 interface Charge { id: string; charge_type: string; description: string | null; amount: number }
 interface Stay { id: string; check_in: string; check_out: string; status: string; rate_quoted: number; guests: { name: string } | null; rooms: { number: string } | null; folio_charges: Charge[] }
@@ -14,12 +14,17 @@ export default async function FolioPage() {
     .in('status', ['checked_in', 'checked_out', 'settled'])
     .order('check_in', { ascending: false })
     .limit(60);
+  const list = (stays ?? []) as unknown as Stay[];
 
   return (
-    <div className="flex flex-col gap-5">
-      <Link href="/stays" className="text-sm" style={{ color: 'var(--color-brand)' }}>← Rooms</Link>
-      <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Stays — Folios</h1>
-      <FolioManager stays={(stays ?? []) as unknown as Stay[]} />
+    <div className="flex flex-col">
+      <PageHeader
+        eyebrow="Stays"
+        title="Folios"
+        subtitle="Each guest's running account — room nights, F&B, and incidentals — settled to one composite GST invoice. The deposit is a separate refundable liability."
+        meta={`${list.length} open`}
+      />
+      <FolioManager stays={list} />
     </div>
   );
 }

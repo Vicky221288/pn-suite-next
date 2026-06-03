@@ -3,6 +3,7 @@ import { getRoleContext } from '@/lib/auth/context';
 import { CAP } from '@/lib/auth/capabilities';
 import { getCollectionsAgeing } from '@/lib/actions/finance';
 import { FinanceManager } from '@/components/finance-manager';
+import { PageHeader } from '@/components/ui/page-header';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,11 +20,12 @@ export default async function FinancePage() {
 
   const caps = ctx?.capabilities ?? [];
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Finance back-office</h1>
-      <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
-        Expenses post to the one shared ledger on approval (P&L is a query). Approval reuses the generic primitive. Ageing reads invoices.
-      </p>
+    <div className="flex flex-col">
+      <PageHeader
+        eyebrow="Revenue"
+        title="Finance"
+        subtitle="Expenses post to the one shared ledger on approval (P&L stays a query). Approval reuses the generic tiered primitive; ageing reads invoices."
+      />
       <FinanceManager
         expenses={(expenses ?? []) as never}
         categories={(categories ?? []) as never}

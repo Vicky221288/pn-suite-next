@@ -20,16 +20,22 @@ function ratio(fg, bg) {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-// [label, fg, bg, threshold, critical]
+// LOCKED THEME — Maroon + Champagne-gold (tokens.css §2/§3). [label, fg, bg, threshold, critical]
 const PAIRS = [
-  ['ink-900 on cream-100 (body)', '#1F1A17', '#FBF6EC', 4.5, true],
-  ['ink-700 on cream-100 (secondary)', '#423B35', '#FBF6EC', 4.5, true],
-  ['ink-500 on cream-100 (tertiary)', '#6B625A', '#FBF6EC', 4.5, true],
-  ['cream-50 on maroon-500 (button text)', '#FFFDF8', '#8E2A2E', 4.5, true],
-  ['maroon-500 on cream-100 (links/ghost)', '#8E2A2E', '#FBF6EC', 4.5, true],
-  ['dark: text on dark-bg', '#F5EDE6', '#1A1413', 4.5, true],
-  ['dark: secondary on dark-bg', '#C9BDB4', '#1A1413', 4.5, true],
+  // light
+  ['body text on champagne canvas', '#281418', '#FBF8F3', 4.5, true],
+  ['secondary on champagne canvas', '#5C4145', '#FBF8F3', 4.5, true],
+  ['tertiary on champagne canvas', '#6F585B', '#FBF8F3', 4.5, true],
+  ['button text on maroon brand', '#FFFDF8', '#8E2A2E', 4.5, true],
+  ['maroon brand link on canvas', '#8E2A2E', '#FBF8F3', 4.5, true],
+  ['antique gold accent on canvas', '#8A6D14', '#FBF8F3', 4.5, true],
+  // dark
+  ['dark: text on canvas', '#F6EEE4', '#19120F', 4.5, true],
+  ['dark: secondary on canvas', '#CFBEAB', '#19120F', 4.5, true],
+  ['dark: tertiary on canvas', '#9C8B79', '#19120F', 4.5, true],
   ['dark: text-on-brand on maroon-400', '#FFFFFF', '#B85457', 4.5, true],
+  ['dark: champagne gold accent on canvas', '#D9B65C', '#19120F', 4.5, true],
+  // status pills (shared ramp; tints verify)
   ['badge success (green-500 on green-100)', '#256840', '#DCEFE3', 4.5, false],
   ['badge warning (amber-500 on amber-100)', '#8A5912', '#F6E9CE', 4.5, false],
   ['badge danger (red-500 on red-100)', '#B5302B', '#F7DAD7', 4.5, false],

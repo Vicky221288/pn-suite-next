@@ -1,9 +1,18 @@
 import Link from 'next/link';
+import { FileSignature } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { BeoGenerateForm } from '@/components/beo-generate-form';
+import { PageHeader } from '@/components/ui/page-header';
+import { Card } from '@/components/ui/card';
+import { CreatePanel } from '@/components/ui/create-panel';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Badge } from '@/components/ui/badge';
+import { Table, THead, TH, TR, TD } from '@/components/ui/table';
 
 interface AcceptedQuote { id: string; guest_count: number; catering_enquiries: { contact_name: string | null; event_date: string | null } | null }
 interface BeoRow { id: string; beo_type: string; version: number; status: string; guest_count: number; guest_guarantee: number; service_date: string | null; guests: { name: string } | null }
+
+const beoTone = (s: string) => (s === 'signed' ? 'success' : s === 'sent' ? 'info' : 'neutral') as 'success' | 'info' | 'neutral';
 
 /** Catering — BEO. Generate from accepted quotes; list BEOs across the shared Events. */
 export default async function CateringBeoPage() {
@@ -24,52 +33,54 @@ export default async function CateringBeoPage() {
   const list = (beos ?? []) as unknown as BeoRow[];
 
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Catering — BEO</h1>
+    <div className="flex flex-col">
+      <PageHeader
+        eyebrow="Catering"
+        title="Banquet Event Orders"
+        subtitle="The function sheet each event runs on — generated from an accepted quote, sent for signature, then locked. Kitchen and FOH each get their own BEO."
+        meta={`${list.length} BEO${list.length === 1 ? '' : 's'}`}
+      />
 
-      <section style={card}>
-        <h2 style={h2}>Generate a BEO from an accepted quote</h2>
-        {quotes.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
-            No accepted quotes. Accept a quote on its quote page first.
-          </p>
-        ) : (
-          <BeoGenerateForm quotes={quotes.map((q) => ({
-            id: q.id,
-            label: `${q.catering_enquiries?.contact_name ?? 'Guest'} · ${q.catering_enquiries?.event_date ?? 'no date'} · ${q.guest_count} pax`,
-            guestCount: q.guest_count,
-          }))} />
-        )}
-      </section>
+      <div className="flex flex-col" style={{ gap: 'var(--space-6)' }}>
+        <CreatePanel label="Generate BEO" title="Generate from an accepted quote">
+          {quotes.length === 0 ? (
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-tertiary)' }}>No accepted quotes yet — accept a quote on its quote page first.</p>
+          ) : (
+            <BeoGenerateForm quotes={quotes.map((q) => ({
+              id: q.id,
+              label: `${q.catering_enquiries?.contact_name ?? 'Guest'} · ${q.catering_enquiries?.event_date ?? 'no date'} · ${q.guest_count} pax`,
+              guestCount: q.guest_count,
+            }))} />
+          )}
+        </CreatePanel>
 
-      <section style={card}>
-        <h2 style={h2}>Banquet Event Orders</h2>
-        {list.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>No BEOs yet.</p>
-        ) : (
-          <ul className="flex flex-col">
-            {list.map((b) => (
-              <li key={b.id} style={{ borderBottom: '1px solid var(--color-divider)' }}>
-                <Link href={`/catering/beo/${b.id}`} className="flex items-center justify-between gap-3 py-2 text-sm" style={{ color: 'var(--color-text)' }}>
-                  <span>
-                    {b.guests?.name ?? 'Guest'} · <b style={{ textTransform: 'uppercase' }}>{b.beo_type}</b> v{b.version}
-                    <span style={{ color: 'var(--color-text-tertiary)' }}> · {b.service_date ?? 'no date'} · {b.guest_count} pax (guar. {b.guest_guarantee})</span>
-                  </span>
-                  <span style={{ color: statusColor(b.status), fontWeight: 600 }}>{b.status}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+        <Card padded={false} title="Banquet Event Orders" subtitle={`${list.length} document${list.length === 1 ? '' : 's'}`}>
+          {list.length === 0 ? (
+            <EmptyState icon={FileSignature} title="No BEOs yet" message="Generate a BEO from an accepted quote. It captures the menu snapshot, guest guarantee, and service details, then moves draft → sent → signed." />
+          ) : (
+            <Table>
+              <THead>
+                <TR><TH>Guest</TH><TH>Type</TH><TH align="right">Ver</TH><TH align="right">Guests</TH><TH align="right">Service date</TH><TH align="right">Status</TH></TR>
+              </THead>
+              <tbody>
+                {list.map((b) => (
+                  <tr key={b.id} className="pn-tr" style={{ position: 'relative' }}>
+                    <TD>
+                      <Link href={`/catering/beo/${b.id}`} aria-label={`Open BEO for ${b.guests?.name ?? 'Guest'}`} style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
+                      <span style={{ fontWeight: 500, color: 'var(--color-text)' }}>{b.guests?.name ?? 'Guest'}</span>
+                    </TD>
+                    <TD><span style={{ position: 'relative', zIndex: 2 }}><Badge tone="neutral">{b.beo_type}</Badge></span></TD>
+                    <TD align="right" mono><span style={{ color: 'var(--color-text-tertiary)' }}>v{b.version}</span></TD>
+                    <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{b.guest_count}<span style={{ color: 'var(--color-text-tertiary)' }}> / {b.guest_guarantee}</span></span></TD>
+                    <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{b.service_date ?? '—'}</span></TD>
+                    <TD align="right"><span style={{ position: 'relative', zIndex: 2 }}><Badge tone={beoTone(b.status)}>{b.status}</Badge></span></TD>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
-
-function statusColor(s: string): string {
-  if (s === 'signed') return 'var(--color-success)';
-  if (s === 'sent') return 'var(--color-brand)';
-  return 'var(--color-text-tertiary)';
-}
-const card: React.CSSProperties = { background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)', padding: 'var(--card-pad)' };
-const h2 = { color: 'var(--color-text-secondary)', fontWeight: 600, fontSize: 'var(--text-sm)', marginBottom: '0.75rem' } as React.CSSProperties;

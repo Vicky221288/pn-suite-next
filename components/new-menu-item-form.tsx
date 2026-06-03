@@ -20,9 +20,9 @@ export function NewMenuItemForm() {
     setBusy(false);
     if (res.ok) { setName(''); setCategory(''); setPrice(0); router.refresh(); } else setMsg(`${res.error}: ${res.message}`);
   }
-  const input: React.CSSProperties = { background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 'var(--input-radius)', color: 'var(--input-text)', padding: '6px 10px', fontSize: 'var(--text-sm)' };
+  const input: React.CSSProperties = { background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 'var(--input-radius)', color: 'var(--input-text)', padding: '8px 12px', fontSize: 'var(--text-sm)', minHeight: 'var(--tap-min)' };
   return (
-    <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
+    <form onSubmit={submit} className="flex flex-wrap items-end" style={{ gap: 'var(--space-2)' }}>
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Item name" required style={input} aria-label="Item name" />
       <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Category" style={input} aria-label="Category" />
       <input type="number" min={0} value={price} onChange={(e) => setPrice(Number(e.target.value))} placeholder="Selling price" style={{ ...input, width: 130 }} aria-label="Selling price" />

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getRoleContext } from '@/lib/auth/context';
 import { CAP } from '@/lib/auth/capabilities';
 import { WorkforceManager } from '@/components/workforce-manager';
+import { PageHeader } from '@/components/ui/page-header';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,11 +19,12 @@ export default async function StaffPage() {
 
   const caps = ctx?.capabilities ?? [];
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Workforce</h1>
-      <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
-        HR profile · geofenced on-premise attendance (boolean only — no location is stored) · leave with tiered approval.
-      </p>
+    <div className="flex flex-col">
+      <PageHeader
+        eyebrow="Workforce"
+        title="Staff"
+        subtitle="HR profile · geofenced on-premise attendance (a yes/no flag only — no location is stored) · leave with tiered approval."
+      />
       <WorkforceManager
         staff={(staff ?? []) as never}
         fence={(fence ?? null) as never}

@@ -1,7 +1,14 @@
-import Link from 'next/link';
+import { BedDouble, DoorClosed } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { formatINR } from '@/lib/utils';
 import { RoomAdmin } from '@/components/room-admin';
+import { PageHeader } from '@/components/ui/page-header';
+import { Card } from '@/components/ui/card';
+import { CreatePanel } from '@/components/ui/create-panel';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Board, BoardCell } from '@/components/ui/board';
+import { Badge } from '@/components/ui/badge';
+import { Table, THead, TH, TR, TD } from '@/components/ui/table';
 
 interface RoomType { id: string; name: string; base_rate: number }
 interface Room { id: string; number: string; name: string | null; status: string; room_types: { name: string } | null }
@@ -9,49 +16,67 @@ interface Room { id: string; number: string; name: string | null; status: string
 /** Stays — room inventory (types + rooms + placeholder status). */
 export default async function StaysPage() {
   const supabase = await createClient();
-  const { data: types } = await supabase.from('room_types').select('id, name, base_rate').order('name');
-  const { data: rooms } = await supabase.from('rooms').select('id, number, name, status, room_types(name)').order('number');
+  const { data: typesData } = await supabase.from('room_types').select('id, name, base_rate').order('name');
+  const { data: roomsData } = await supabase.from('rooms').select('id, number, name, status, room_types(name)').order('number');
+  const types = (typesData ?? []) as RoomType[];
+  const rooms = (roomsData ?? []) as unknown as Room[];
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Stays — Rooms</h1>
-        <span className="flex gap-3">
-          <Link href="/stays/frontdesk" className="text-sm" style={{ color: 'var(--color-brand)' }}>Front desk →</Link>
-          <Link href="/stays/housekeeping" className="text-sm" style={{ color: 'var(--color-brand)' }}>Housekeeping →</Link>
-          <Link href="/stays/folio" className="text-sm" style={{ color: 'var(--color-brand)' }}>Folios →</Link>
-          <Link href="/stays/reporting" className="text-sm" style={{ color: 'var(--color-brand)' }}>Reporting →</Link>
-          <Link href="/stays/reservations" className="text-sm" style={{ color: 'var(--color-brand)' }}>Reservations →</Link>
-        </span>
+    <div className="flex flex-col">
+      <PageHeader
+        eyebrow="Stays"
+        title="Rooms"
+        subtitle="Room inventory and nightly rates. Rates are config-driven; GST is applied at the folio, never stored on the room."
+        meta={`${rooms.length} room${rooms.length === 1 ? '' : 's'}`}
+      />
+
+      <div className="flex flex-col" style={{ gap: 'var(--space-6)' }}>
+        <CreatePanel label="Add room or type" title="Add a room type or room">
+          <RoomAdmin types={types} />
+        </CreatePanel>
+
+        <Card title="Rooms" subtitle={`${rooms.length} in inventory`}>
+          {rooms.length === 0 ? (
+            <EmptyState icon={BedDouble} title="No rooms yet" message="Add a room type with its nightly rate, then add rooms of that type. They'll appear here and on the housekeeping board.">
+              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-tertiary)' }}>Use <b style={{ color: 'var(--color-text-secondary)' }}>Add room or type</b> above.</span>
+            </EmptyState>
+          ) : (
+            <Board>
+              {rooms.map((r) => (
+                <BoardCell
+                  key={r.id}
+                  title={`#${r.number}`}
+                  accent={r.status === 'available' ? 'success' : 'neutral'}
+                  top={<Badge tone={r.status === 'available' ? 'success' : 'neutral'}>{r.status.replace(/_/g, ' ')}</Badge>}
+                >
+                  <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>{r.room_types?.name ?? '—'}</div>
+                  {r.name && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-tertiary)', marginTop: 2 }}>{r.name}</div>}
+                </BoardCell>
+              ))}
+            </Board>
+          )}
+        </Card>
+
+        <Card padded={false} title="Room types &amp; rates" subtitle="Config-driven · GST applied at folio (S4)">
+          {types.length === 0 ? (
+            <EmptyState icon={DoorClosed} title="No room types yet" message="A room type carries the nightly base rate. Add one to start building inventory." />
+          ) : (
+            <Table>
+              <THead>
+                <TR><TH>Type</TH><TH align="right">Rate / night</TH></TR>
+              </THead>
+              <tbody>
+                {types.map((t) => (
+                  <TR key={t.id}>
+                    <TD><span style={{ fontWeight: 500, color: 'var(--color-text)' }}>{t.name}</span></TD>
+                    <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{formatINR(t.base_rate)}</span></TD>
+                  </TR>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Card>
       </div>
-
-      <section style={card}>
-        <h2 style={h2}>Room types &amp; rooms</h2>
-        <RoomAdmin types={(types ?? []) as RoomType[]} />
-      </section>
-
-      <section style={card}>
-        <h2 style={h2}>Rooms</h2>
-        {(rooms ?? []).length === 0 ? <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>No rooms yet.</p> : (
-          <ul className="flex flex-col">
-            {((rooms ?? []) as unknown as Room[]).map((r) => (
-              <li key={r.id} className="flex items-center justify-between gap-3 py-2 text-sm" style={{ borderBottom: '1px solid var(--color-divider)', color: 'var(--color-text)' }}>
-                <span>#{r.number} {r.name ? <span style={{ color: 'var(--color-text-tertiary)' }}>· {r.name}</span> : null} <span style={{ color: 'var(--color-text-tertiary)' }}>· {r.room_types?.name ?? '—'}</span></span>
-                <span style={{ color: r.status === 'available' ? 'var(--color-success)' : 'var(--color-text-tertiary)' }}>{r.status}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section style={card}>
-        <h2 style={h2}>Type rates (config-driven; GST applied at folio — S4)</h2>
-        <ul className="flex flex-col text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-          {(types ?? []).map((t) => <li key={t.id} className="flex justify-between py-1" style={{ borderBottom: '1px solid var(--color-divider)' }}><span>{t.name}</span><span style={{ fontFamily: 'var(--font-mono)' }}>{formatINR(t.base_rate)}/night</span></li>)}
-        </ul>
-      </section>
     </div>
   );
 }
-const card: React.CSSProperties = { background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)', padding: 'var(--card-pad)' };
-const h2 = { color: 'var(--color-text-secondary)', fontWeight: 600, fontSize: 'var(--text-sm)', marginBottom: '0.75rem' } as React.CSSProperties;

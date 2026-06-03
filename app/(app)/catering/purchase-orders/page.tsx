@@ -1,11 +1,18 @@
-import Link from 'next/link';
+import { PackageCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { getRoleContext } from '@/lib/auth/context';
 import { formatINR } from '@/lib/utils';
 import { PoActions } from '@/components/po-actions';
+import { PageHeader } from '@/components/ui/page-header';
+import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Badge } from '@/components/ui/badge';
+import { Table, THead, TH, TR, TD } from '@/components/ui/table';
 
 interface PoLine { id: string; name: string; quantity: number; unit: string | null }
 interface Po { id: string; status: string; created_at: string; vendors: { name: string } | null; purchase_order_lines: PoLine[] }
+
+const poTone = (s: string) => (s === 'received' ? 'success' : s === 'ordered' ? 'info' : 'neutral') as 'success' | 'info' | 'neutral';
 
 /** Catering — Purchase Orders. draft → ordered → received (receive = stock IN). */
 export default async function PurchaseOrdersPage() {
@@ -22,32 +29,48 @@ export default async function PurchaseOrdersPage() {
   const costs = new Map<string, number>(((costData?.costs ?? []) as { line_id: string; unit_cost: number }[]).map((c) => [c.line_id, c.unit_cost]));
 
   return (
-    <div className="flex flex-col gap-5">
-      <Link href="/catering/production" className="text-sm" style={{ color: 'var(--color-brand)' }}>← Production</Link>
-      <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Catering — Purchase Orders</h1>
+    <div className="flex flex-col">
+      <PageHeader
+        eyebrow="Catering"
+        title="Purchase orders"
+        subtitle="Procurement grouped by supplier — planned from kitchen tickets. Mark ordered when placed, receive to bring stock in."
+        meta={`${pos.length} order${pos.length === 1 ? '' : 's'}`}
+      />
 
-      {pos.length === 0 ? <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>No purchase orders. Plan a purchase from a kitchen ticket.</p> : (
-        <ul className="flex flex-col gap-3">
+      {pos.length === 0 ? (
+        <Card>
+          <EmptyState icon={PackageCheck} title="No purchase orders" message="Plan a purchase from a kitchen ticket to draft supplier POs here, then move each draft → ordered → received." />
+        </Card>
+      ) : (
+        <div className="flex flex-col" style={{ gap: 'var(--space-6)' }}>
           {pos.map((po) => (
-            <li key={po.id} style={card}>
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>{po.vendors?.name ?? 'Unassigned supplier'}</h2>
-                <span style={{ color: po.status === 'received' ? 'var(--color-success)' : po.status === 'ordered' ? 'var(--color-brand)' : 'var(--color-text-tertiary)', fontWeight: 600 }}>{po.status}</span>
+            <Card
+              key={po.id}
+              padded={false}
+              title={po.vendors?.name ?? 'Unassigned supplier'}
+              actions={<Badge tone={poTone(po.status)}>{po.status}</Badge>}
+            >
+              <Table>
+                <THead>
+                  <TR><TH>Item</TH><TH align="right">Quantity</TH>{costs.size > 0 && <TH align="right">Unit cost</TH>}</TR>
+                </THead>
+                <tbody>
+                  {po.purchase_order_lines.map((l) => (
+                    <TR key={l.id}>
+                      <TD><span style={{ color: 'var(--color-text)' }}>{l.name}</span></TD>
+                      <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{l.quantity} {l.unit}</span></TD>
+                      {costs.size > 0 && <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{costs.has(l.id) ? `${formatINR(costs.get(l.id)!)}/${l.unit}` : '—'}</span></TD>}
+                    </TR>
+                  ))}
+                </tbody>
+              </Table>
+              <div style={{ padding: 'var(--space-4) var(--card-pad)', borderTop: '1px solid var(--color-divider)' }}>
+                <PoActions poId={po.id} status={po.status} />
               </div>
-              <ul className="my-2 flex flex-col text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                {po.purchase_order_lines.map((l) => (
-                  <li key={l.id} className="flex justify-between py-0.5">
-                    <span>{l.name}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)' }}>{l.quantity} {l.unit}{costs.has(l.id) ? ` · ${formatINR(costs.get(l.id)!)}/${l.unit}` : ''}</span>
-                  </li>
-                ))}
-              </ul>
-              <PoActions poId={po.id} status={po.status} />
-            </li>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
 }
-const card: React.CSSProperties = { background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)', padding: 'var(--card-pad)' };

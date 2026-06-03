@@ -30,7 +30,7 @@ export function InvoiceGenerator() {
     if (res.ok) router.push(`/catering/invoice/${(res.data as { invoice_id: string }).invoice_id}`);
     else setMsg(`${res.error}: ${res.message}`);
   }
-  const i: React.CSSProperties = { background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 'var(--input-radius)', color: 'var(--input-text)', padding: '6px 10px', fontSize: 'var(--text-sm)' };
+  const i: React.CSSProperties = { background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 'var(--input-radius)', color: 'var(--input-text)', padding: '8px 12px', fontSize: 'var(--text-sm)', minHeight: 'var(--tap-min)' };
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">

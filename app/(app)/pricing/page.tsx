@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getRoleContext } from '@/lib/auth/context';
 import { CAP } from '@/lib/auth/capabilities';
 import { PricingManager } from '@/components/pricing-manager';
+import { PageHeader } from '@/components/ui/page-header';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,11 +16,12 @@ export default async function PricingPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Dynamic pricing</h1>
-      <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
-        Rules flex the <b>selling</b> price only. GST is decided separately by supply-type and is never touched here.
-      </p>
+    <div className="flex flex-col">
+      <PageHeader
+        eyebrow="Revenue"
+        title="Pricing"
+        subtitle="Rate rules flex the selling price only — GST is decided separately by supply-type and is never touched here."
+      />
       <PricingManager
         rules={(rules ?? []) as never}
         roomTypes={(roomTypes ?? []) as never}

@@ -67,31 +67,31 @@
    2. SEMANTIC TOKENS — LIGHT (default)   ← components read THESE
    --------------------------------------------------------------------------- */
 :root {
-  /* Surfaces */
-  --color-bg:            var(--cream-100);
-  --color-surface:       var(--cream-50);
-  --color-surface-raised:var(--ink-0);
-  --color-surface-sunken:var(--cream-200);
+  /* Surfaces — LOCKED champagne canvas (warm gold-cream, layered for depth) */
+  --color-bg:            #FBF8F3;
+  --color-surface:       #FFFDF8;
+  --color-surface-raised:#FFFFFF;
+  --color-surface-sunken:#F2EADB;
   --color-overlay:       rgba(31, 26, 23, 0.45);
 
-  /* Text */
-  --color-text:          var(--ink-900);
-  --color-text-secondary:var(--ink-700);
-  --color-text-tertiary: var(--ink-500);
+  /* Text — deep maroon-ink (warm, not cold grey) */
+  --color-text:          #281418;
+  --color-text-secondary:#5C4145;
+  --color-text-tertiary: #6F585B;
   --color-text-disabled: var(--ink-300);
-  --color-text-on-brand: var(--cream-50);   /* text on maroon — checked ≥7:1 */
+  --color-text-on-brand: #FFFDF8;   /* text on maroon — checked ≥7:1 */
 
   /* Brand / primary action */
   --color-brand:         var(--maroon-500);
   --color-brand-hover:   var(--maroon-600);
   --color-brand-active:  var(--maroon-700);
-  --color-brand-subtle:  var(--maroon-50);   /* tinted backgrounds, selected rows */
-  --color-brand-border:  var(--maroon-200);
+  --color-brand-subtle:  #F7E9E3;   /* tinted backgrounds, selected rows */
+  --color-brand-border:  #E6CBC4;
 
-  /* Borders & lines */
-  --color-border:        var(--ink-200);
-  --color-border-strong: var(--cream-300);
-  --color-divider:       var(--cream-300);
+  /* Borders & lines — warm champagne hairlines */
+  --color-border:        #E9DCCA;
+  --color-border-strong: #D9C4AD;
+  --color-divider:       #ECE1D0;
 
   /* Focus — keyboard-first, never removed, only restyled */
   --color-focus-ring:    var(--maroon-400);
@@ -102,7 +102,7 @@
   --color-warning: var(--amber-500);  --color-warning-bg: var(--amber-100);
   --color-danger:  var(--red-500);    --color-danger-bg:  var(--red-100);
   --color-info:    var(--blue-500);   --color-info-bg:    var(--blue-100);
-  --color-accent-ceremonial: var(--gold-500);  /* wedding/event flourishes only */
+  --color-accent-ceremonial: #8A6D14;  /* antique champagne gold — AA as small text */
 }
 
 /* ---------------------------------------------------------------------------
@@ -110,29 +110,30 @@
    Same token NAMES, re-valued. Components need zero changes.
    --------------------------------------------------------------------------- */
 [data-theme="dark"] {
-  --color-bg:            var(--dark-bg);
-  --color-surface:       var(--dark-surface);
-  --color-surface-raised:var(--dark-raised);
-  --color-surface-sunken:#15100F;
+  --color-bg:            #19120F;   /* warm champagne charcoal */
+  --color-surface:       #241A15;
+  --color-surface-raised:#2E231C;
+  --color-surface-sunken:#120C09;
   --color-overlay:       rgba(0, 0, 0, 0.6);
 
-  --color-text:          #F5EDE6;
-  --color-text-secondary:#C9BDB4;
-  --color-text-tertiary: #968A80;
-  --color-text-disabled: #5E534C;
-  --color-text-on-brand: #FBF1F1;
+  --color-text:          #F6EEE4;
+  --color-text-secondary:#CFBEAB;
+  --color-text-tertiary: #9C8B79;
+  --color-text-disabled: #6A5C50;
+  --color-text-on-brand: #FFFFFF;
 
   --color-brand:         var(--maroon-400);  /* lift for contrast on dark */
-  --color-brand-hover:   var(--maroon-300);
-  --color-brand-active:  var(--maroon-200);
-  --color-brand-subtle:  #2A1517;
-  --color-brand-border:  #5C2B2E;
+  --color-brand-hover:   #C97B7A;
+  --color-brand-active:  #D9A19E;
+  --color-brand-subtle:  #2E1A18;
+  --color-brand-border:  #5E2F2C;
 
-  --color-border:        var(--dark-border);
-  --color-border-strong: #4D3F3A;
-  --color-divider:       var(--dark-border);
+  --color-border:        #3E312A;
+  --color-border-strong: #52423A;
+  --color-divider:       #3E312A;
 
-  --color-focus-ring:    var(--maroon-300);
+  --color-focus-ring:    #C97B7A;
+  --color-accent-ceremonial: #D9B65C;   /* champagne gold lifts on dark */
 
   --color-success-bg: #14301F;  --color-warning-bg: #322412;
   --color-danger-bg:  #321413;  --color-info-bg:    #122636;

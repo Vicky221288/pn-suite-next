@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getRoleContext } from '@/lib/auth/context';
 import { HousekeepingBoard } from '@/components/housekeeping-board';
+import { PageHeader } from '@/components/ui/page-header';
 
 interface BoardRoom { room_id: string; number: string; service_status: string; housekeeping_status: string; occupied: boolean; sellable: boolean }
 
@@ -15,10 +15,16 @@ export default async function HousekeepingPage() {
   const { data: maint } = await supabase.from('maintenance_requests').select('id, description, priority, status, room_id, rooms(number)').neq('status', 'resolved').order('created_at');
   const { data: staff } = await supabase.from('staff').select('id, name').eq('active', true).order('name');
 
+  const sellable = board.filter((r) => r.sellable).length;
+
   return (
-    <div className="flex flex-col gap-5">
-      <Link href="/stays" className="text-sm" style={{ color: 'var(--color-brand)' }}>← Rooms</Link>
-      <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Stays — Housekeeping</h1>
+    <div className="flex flex-col">
+      <PageHeader
+        eyebrow="Stays"
+        title="Housekeeping"
+        subtitle="The live room board with turn queue and maintenance. Occupancy and housekeeping are tracked independently; a room is sellable only when both line up."
+        meta={`${sellable}/${board.length} sellable`}
+      />
       <HousekeepingBoard
         board={board}
         tasks={(tasks ?? []) as never}

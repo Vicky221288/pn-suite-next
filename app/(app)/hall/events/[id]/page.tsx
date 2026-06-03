@@ -1,10 +1,12 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getRoleContext } from '@/lib/auth/context';
 import { RosterPanel } from '@/components/roster-actions';
 import { ChecklistPanel } from '@/components/checklist-actions';
 import { VendorPanel } from '@/components/vendor-actions';
+import { DetailHeader } from '@/components/ui/detail-header';
+import { Card } from '@/components/ui/card';
+import { StatusBadge } from '@/components/ui/badge';
 
 /** Hall event-day ops — staff roster, execution checklists (photo-proof), vendors. */
 export default async function HallEventPage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,16 +22,27 @@ export default async function HallEventPage({ params }: { params: Promise<{ id: 
   const { data: vendors } = await supabase.from('vendors').select('id, name').eq('active', true).order('name');
 
   return (
-    <div className="flex flex-col gap-5">
-      <Link href="/hall" className="text-sm" style={{ color: 'var(--color-brand)' }}>← Hall</Link>
-      <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Event ops · {event.event_date}</h1>
-      <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{event.slot ?? '—'} · {event.status}</p>
+    <div className="flex flex-col" style={{ gap: 'var(--space-6)' }}>
+      <DetailHeader
+        backHref="/hall"
+        backLabel="Hall"
+        eyebrow="Hall · Event ops"
+        title={<span style={{ fontFamily: 'var(--font-mono)' }}>{event.event_date}</span>}
+        status={<StatusBadge status={event.status} />}
+        meta={(event.slot ?? '—').replace(/_/g, ' ')}
+      />
 
-      <section style={card}><h2 style={h2}>Staff roster</h2><RosterPanel eventId={id} roster={(roster ?? []) as never} staff={staff ?? []} /></section>
-      <section style={card}><h2 style={h2}>Execution checklists (photo-proof)</h2><ChecklistPanel eventId={id} orgId={ctx?.orgId ?? ''} checklists={(checklists ?? []) as never} /></section>
-      <section style={card}><h2 style={h2}>Vendors</h2><VendorPanel eventId={id} linked={(vendorsLinked ?? []) as never} vendors={vendors ?? []} /></section>
+      <Card title="Staff roster" subtitle="Assigned staff + day-of status">
+        <RosterPanel eventId={id} roster={(roster ?? []) as never} staff={staff ?? []} />
+      </Card>
+
+      <Card title="Execution checklists" subtitle="Photo-proof items require an uploaded photo before completion">
+        <ChecklistPanel eventId={id} orgId={ctx?.orgId ?? ''} checklists={(checklists ?? []) as never} />
+      </Card>
+
+      <Card title="Vendor coordination" subtitle="Service, amount, and commission per vendor">
+        <VendorPanel eventId={id} linked={(vendorsLinked ?? []) as never} vendors={vendors ?? []} />
+      </Card>
     </div>
   );
 }
-const card: React.CSSProperties = { background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)', padding: 'var(--card-pad)' };
-const h2 = { color: 'var(--color-text-secondary)', fontWeight: 600, fontSize: 'var(--text-sm)', marginBottom: '0.75rem' } as React.CSSProperties;

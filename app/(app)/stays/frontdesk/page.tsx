@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { FrontDesk } from '@/components/front-desk';
+import { PageHeader } from '@/components/ui/page-header';
 
 interface Room { id: string; number: string; room_types: { name: string } | null }
 interface Stay { id: string; check_in: string; check_out: string; status: string; is_foreign: boolean; guests: { name: string; phone: string } | null; rooms: { number: string } | null }
@@ -16,9 +16,13 @@ export default async function FrontDeskPage() {
     .order('check_in');
 
   return (
-    <div className="flex flex-col gap-5">
-      <Link href="/stays" className="text-sm" style={{ color: 'var(--color-brand)' }}>← Rooms</Link>
-      <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Stays — Front Desk</h1>
+    <div className="flex flex-col">
+      <PageHeader
+        eyebrow="Stays"
+        title="Front desk"
+        subtitle="Walk a guest in, check arrivals in, and check departures out. Foreign-national check-in captures Form C before the stay can begin."
+        meta={`${(stays ?? []).length} active`}
+      />
       <FrontDesk rooms={(rooms ?? []) as unknown as Room[]} stays={(stays ?? []) as unknown as Stay[]} />
     </div>
   );

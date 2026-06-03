@@ -1,7 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { TriangleAlert, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { CreatePanel } from '@/components/ui/create-panel';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Badge } from '@/components/ui/badge';
+import { InfoRow } from '@/components/ui/info-row';
+import { Table, THead, TH, TR, TD } from '@/components/ui/table';
 import { formatINR } from '@/lib/utils';
 import { upsertRateRule, setRateRuleActive, resolvePrice } from '@/lib/actions/pricing';
 
@@ -10,9 +17,7 @@ interface RoomType { id: string; name: string; base_rate: number }
 interface Step { rule_id: string; name: string; priority: number; condition: string; kind: string; value: number; fired: boolean; running_after: number }
 interface Preview { base: number; effective_price: number; overridden: boolean; steps: Step[] }
 
-const card: React.CSSProperties = { background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--card-radius)', boxShadow: 'var(--card-shadow)', padding: 'var(--card-pad)' };
-const h2 = { color: 'var(--color-text-secondary)', fontWeight: 600, fontSize: 'var(--text-sm)', marginBottom: '0.75rem' } as React.CSSProperties;
-const inp: React.CSSProperties = { background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 'var(--input-radius)', color: 'var(--input-text)', padding: '6px 10px', fontSize: 'var(--text-sm)' };
+const field: React.CSSProperties = { background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 'var(--input-radius)', color: 'var(--input-text)', padding: '8px 12px', fontSize: 'var(--text-sm)', minHeight: 'var(--tap-min)' };
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export function PricingManager({ rules, roomTypes, canManage }: { rules: Rule[]; roomTypes: RoomType[]; canManage: boolean }) {
@@ -26,7 +31,6 @@ export function PricingManager({ rules, roomTypes, canManage }: { rules: Rule[];
     if (res.ok) { reset?.(); router.refresh(); } else setMsg(`${res.error}: ${res.message}`);
   }
 
-  // rule form
   const [name, setName] = useState(''); const [subjId, setSubjId] = useState('');
   const [cond, setCond] = useState<'always' | 'date_range' | 'day_of_week' | 'occupancy'>('always');
   const [kind, setKind] = useState<'percent' | 'absolute'>('percent');
@@ -46,7 +50,6 @@ export function PricingManager({ rules, roomTypes, canManage }: { rules: Rule[];
     }), () => setName(''));
   }
 
-  // preview
   const [pvRt, setPvRt] = useState(roomTypes[0]?.id ?? ''); const [pvDate, setPvDate] = useState(''); const [pvOcc, setPvOcc] = useState('');
   const [preview, setPreview] = useState<Preview | null>(null);
   async function doPreview() {
@@ -58,78 +61,106 @@ export function PricingManager({ rules, roomTypes, canManage }: { rules: Rule[];
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      {msg && <span className="text-xs" style={{ color: 'var(--color-danger)' }}>{msg}</span>}
+    <div className="flex flex-col" style={{ gap: 'var(--space-6)' }}>
+      {msg && (
+        <div className="flex items-center" style={{ gap: 'var(--space-2)', background: 'var(--badge-danger-bg)', color: 'var(--badge-danger-text)', borderRadius: 'var(--radius-md)', padding: 'var(--space-2) var(--space-3)', fontSize: 'var(--text-sm)' }}>
+          <TriangleAlert size={15} aria-hidden /> {msg}
+        </div>
+      )}
 
-      {/* Price preview */}
-      <section style={card}>
-        <h2 style={h2}>Price preview (on demand — selling price, pre-tax)</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <select value={pvRt} onChange={(e) => setPvRt(e.target.value)} style={inp} aria-label="Room type">
+      {/* Price preview — selling, pre-tax */}
+      <Card title="Price preview" subtitle="On-demand · selling price, pre-tax (GST is resolved separately and never shown here)">
+        <div className="flex flex-wrap items-center" style={{ gap: 'var(--space-2)' }}>
+          <select value={pvRt} onChange={(e) => setPvRt(e.target.value)} style={field} aria-label="Room type">
             {roomTypes.map((r) => <option key={r.id} value={r.id}>{r.name} · base {formatINR(r.base_rate)}</option>)}
           </select>
-          <input type="date" value={pvDate} onChange={(e) => setPvDate(e.target.value)} style={inp} aria-label="Date" />
-          <input value={pvOcc} onChange={(e) => setPvOcc(e.target.value)} placeholder="Occupancy %" style={{ ...inp, width: 110 }} aria-label="Occupancy percent" />
+          <input type="date" value={pvDate} onChange={(e) => setPvDate(e.target.value)} style={field} aria-label="Date" />
+          <input value={pvOcc} onChange={(e) => setPvOcc(e.target.value)} placeholder="Occupancy %" style={{ ...field, width: 130 }} aria-label="Occupancy percent" />
           <Button onClick={doPreview} disabled={busy || !pvRt}>Preview</Button>
         </div>
         {preview && (
-          <div className="mt-3 text-sm" style={{ color: 'var(--color-text)' }}>
-            <p>Base {formatINR(preview.base)} → <b>{formatINR(preview.effective_price)}</b>{preview.overridden ? ' (override)' : ''}</p>
-            <ul className="flex flex-col mt-1">
-              {preview.steps.map((s, idx) => (
-                <li key={idx} className="text-xs" style={{ color: s.fired ? 'var(--color-text-secondary)' : 'var(--color-text-tertiary)' }}>
-                  #{s.priority} {s.name} · {s.condition} · {s.kind} {s.value} · {s.fired ? `fired → ${formatINR(s.running_after)}` : 'did not fire'}
-                </li>
-              ))}
-            </ul>
+          <div style={{ marginTop: 'var(--space-4)' }}>
+            <dl className="flex flex-col" style={{ gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+              <InfoRow label="Base" value={formatINR(preview.base)} mono />
+              <InfoRow label={<span className="inline-flex items-center" style={{ gap: 'var(--space-2)' }}>Effective price {preview.overridden && <Badge tone="warning">override</Badge>}</span>} value={formatINR(preview.effective_price)} mono strong tone="brand" />
+            </dl>
+            <Table>
+              <THead>
+                <TR><TH align="right">#</TH><TH>Rule</TH><TH>Condition</TH><TH align="right">Adjust</TH><TH align="right">Result</TH></TR>
+              </THead>
+              <tbody>
+                {preview.steps.map((s, idx) => (
+                  <TR key={idx}>
+                    <TD align="right" mono><span style={{ color: 'var(--color-text-tertiary)' }}>{s.priority}</span></TD>
+                    <TD>
+                      <span style={{ color: s.fired ? 'var(--color-text)' : 'var(--color-text-tertiary)' }}>{s.name}</span>
+                      <span style={{ marginLeft: 'var(--space-2)' }}><Badge tone={s.fired ? 'success' : 'neutral'}>{s.fired ? 'fired' : 'skipped'}</Badge></span>
+                    </TD>
+                    <TD><span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>{s.condition}</span></TD>
+                    <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{s.kind === 'percent' ? `${s.value}%` : formatINR(s.value)}</span></TD>
+                    <TD align="right" mono><span style={{ color: s.fired ? 'var(--color-text)' : 'var(--color-text-tertiary)' }}>{s.fired ? formatINR(s.running_after) : '—'}</span></TD>
+                  </TR>
+                ))}
+              </tbody>
+            </Table>
           </div>
         )}
-      </section>
+      </Card>
 
-      {/* Rule manager */}
+      {/* New rule */}
       {canManage && (
-        <section style={card}>
-          <h2 style={h2}>New rate rule (room type)</h2>
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Rule name" style={inp} aria-label="Rule name" />
-              <select value={subjId} onChange={(e) => setSubjId(e.target.value)} style={inp} aria-label="Applies to">
+        <CreatePanel label="New rule" title="New rate rule (room type)">
+          <div className="flex flex-col" style={{ gap: 'var(--space-3)' }}>
+            <div className="grid" style={{ gap: 'var(--space-2)', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Rule name" style={field} aria-label="Rule name" />
+              <select value={subjId} onChange={(e) => setSubjId(e.target.value)} style={field} aria-label="Applies to">
                 <option value="">all room types</option>
                 {roomTypes.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
-              <select value={cond} onChange={(e) => setCond(e.target.value as typeof cond)} style={inp} aria-label="Condition">
+              <select value={cond} onChange={(e) => setCond(e.target.value as typeof cond)} style={field} aria-label="Condition">
                 <option value="always">always</option><option value="date_range">date range</option><option value="day_of_week">day of week</option><option value="occupancy">occupancy ≥</option>
               </select>
-              <select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} style={inp} aria-label="Adjustment kind">
+              <select value={kind} onChange={(e) => setKind(e.target.value as typeof kind)} style={field} aria-label="Adjustment kind">
                 <option value="percent">percent %</option><option value="absolute">absolute ₹</option>
               </select>
-              <input value={value} onChange={(e) => setValue(e.target.value)} placeholder={kind === 'percent' ? '+20 / -10' : 'price'} style={{ ...inp, width: 110 }} aria-label="Adjustment value" />
-              <input value={priority} onChange={(e) => setPriority(e.target.value)} placeholder="priority" style={{ ...inp, width: 90 }} aria-label="Priority" />
+              <input value={value} onChange={(e) => setValue(e.target.value)} placeholder={kind === 'percent' ? '+20 / -10' : 'price'} style={field} aria-label="Adjustment value" />
+              <input value={priority} onChange={(e) => setPriority(e.target.value)} placeholder="priority" style={field} aria-label="Priority" />
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {cond === 'date_range' && <><input type="date" value={dFrom} onChange={(e) => setDFrom(e.target.value)} style={inp} aria-label="From" /><input type="date" value={dTo} onChange={(e) => setDTo(e.target.value)} style={inp} aria-label="To" /></>}
-              {cond === 'day_of_week' && DAYS.map((d, i) => <label key={d} className="text-xs flex items-center gap-1" style={{ color: 'var(--color-text-secondary)' }}><input type="checkbox" checked={dows.includes(i)} onChange={() => toggleDow(i)} aria-label={d} />{d}</label>)}
-              {cond === 'occupancy' && <input value={occ} onChange={(e) => setOcc(e.target.value)} placeholder="min %" style={{ ...inp, width: 110 }} aria-label="Occupancy min" />}
+            <div className="flex flex-wrap items-center" style={{ gap: 'var(--space-3)' }}>
+              {cond === 'date_range' && <><input type="date" value={dFrom} onChange={(e) => setDFrom(e.target.value)} style={field} aria-label="From" /><input type="date" value={dTo} onChange={(e) => setDTo(e.target.value)} style={field} aria-label="To" /></>}
+              {cond === 'day_of_week' && DAYS.map((d, i) => <label key={d} className="flex items-center" style={{ gap: 4, fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}><input type="checkbox" checked={dows.includes(i)} onChange={() => toggleDow(i)} aria-label={d} />{d}</label>)}
+              {cond === 'occupancy' && <input value={occ} onChange={(e) => setOcc(e.target.value)} placeholder="min %" style={{ ...field, width: 130 }} aria-label="Occupancy min" />}
               <Button onClick={saveRule} disabled={busy || !name || !value}>Save rule</Button>
             </div>
           </div>
-        </section>
+        </CreatePanel>
       )}
 
-      {/* Rules list */}
-      <section style={card}>
-        <h2 style={h2}>Rules (priority order)</h2>
-        {rules.length === 0 ? <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>No rules yet.</p> : (
-          <ul className="flex flex-col">
-            {rules.map((r) => (
-              <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm" style={{ borderTop: '1px solid var(--color-divider)', color: 'var(--color-text)' }}>
-                <span>#{r.priority} <b>{r.name}</b> <span style={{ color: 'var(--color-text-tertiary)' }}>· {r.condition_type} · {r.adjustment_kind} {r.adjustment_value}{r.subject_id ? ' · specific' : ' · all'}</span> · <b style={{ color: r.active ? 'var(--color-success)' : 'var(--color-text-tertiary)' }}>{r.active ? 'active' : 'inactive'}</b></span>
-                {canManage && <button onClick={() => run(() => setRateRuleActive({ ruleId: r.id, active: !r.active }))} className="text-xs" style={{ color: 'var(--color-brand)' }} disabled={busy}>{r.active ? 'deactivate' : 'activate'}</button>}
-              </li>
-            ))}
-          </ul>
+      {/* Rules */}
+      <Card padded={false} title="Rules" subtitle="Applied in priority order">
+        {rules.length === 0 ? (
+          <EmptyState icon={Tag} title="No rate rules yet" message="Add a rule to flex the selling price by date, day of week, or occupancy. Rules stack by priority; an absolute rule is a terminal override." />
+        ) : (
+          <Table>
+            <THead>
+              <TR><TH align="right">#</TH><TH>Rule</TH><TH>Condition</TH><TH align="right">Adjust</TH><TH>Scope</TH><TH align="right">Status</TH>{canManage && <TH align="right">Actions</TH>}</TR>
+            </THead>
+            <tbody>
+              {rules.map((r) => (
+                <TR key={r.id}>
+                  <TD align="right" mono><span style={{ color: 'var(--color-text-tertiary)' }}>{r.priority}</span></TD>
+                  <TD><span style={{ fontWeight: 500, color: 'var(--color-text)' }}>{r.name}</span></TD>
+                  <TD><span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>{r.condition_type.replace(/_/g, ' ')}</span></TD>
+                  <TD align="right" mono><span style={{ color: 'var(--color-text-secondary)' }}>{r.adjustment_kind === 'percent' ? `${r.adjustment_value}%` : formatINR(r.adjustment_value)}</span></TD>
+                  <TD><span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-tertiary)' }}>{r.subject_id ? 'specific' : 'all'}</span></TD>
+                  <TD align="right"><Badge tone={r.active ? 'success' : 'neutral'}>{r.active ? 'active' : 'inactive'}</Badge></TD>
+                  {canManage && <TD align="right"><Button variant="ghost" onClick={() => run(() => setRateRuleActive({ ruleId: r.id, active: !r.active }))} disabled={busy}>{r.active ? 'Deactivate' : 'Activate'}</Button></TD>}
+                </TR>
+              ))}
+            </tbody>
+          </Table>
         )}
-      </section>
+      </Card>
     </div>
   );
 }

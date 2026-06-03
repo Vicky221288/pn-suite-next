@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getRoleContext } from '@/lib/auth/context';
 import { CAP } from '@/lib/auth/capabilities';
 import { OpsManager } from '@/components/ops-manager';
+import { PageHeader } from '@/components/ui/page-header';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,11 +19,12 @@ export default async function OpsPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Ops execution</h1>
-      <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
-        Tasks · incidents · checklist templates. Templates generate into the existing event checklists (photo-proof intact).
-      </p>
+    <div className="flex flex-col">
+      <PageHeader
+        eyebrow="Operations"
+        title="Tasks &amp; incidents"
+        subtitle="Tasks · incidents · checklist templates. Templates generate into the existing event checklists (photo-proof intact)."
+      />
       <OpsManager
         tasks={(tasks ?? []) as never}
         incidents={(incidents ?? []) as never}

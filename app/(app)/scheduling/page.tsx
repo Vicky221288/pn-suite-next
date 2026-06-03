@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getRosterBoard } from '@/lib/actions/scheduling';
 import { SchedulingManager } from '@/components/scheduling-manager';
+import { PageHeader } from '@/components/ui/page-header';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,11 +22,12 @@ export default async function SchedulingPage() {
   const boardData = (board.ok ? board.data : { can_manage: false, shifts: [] }) as { can_manage: boolean; shifts: unknown[] };
 
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="font-display text-2xl" style={{ color: 'var(--color-text)' }}>Scheduling</h1>
-      <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
-        Shift templates → roster → assign staff. Published rosters are what staff see. The overlap guard prevents double-booking a staff member.
-      </p>
+    <div className="flex flex-col">
+      <PageHeader
+        eyebrow="Workforce"
+        title="Scheduling"
+        subtitle="Shift templates → roster → assign staff. Published rosters are what staff see; the overlap guard prevents double-booking a staff member."
+      />
       <SchedulingManager
         templates={(templates ?? []) as never}
         rosters={(rosters ?? []) as never}
